@@ -1,0 +1,13 @@
+(include "ad.egg")
+
+(push)
+
+(let x (Var "x"))
+(let y (App (Mul) (vec-of (Const 5.) x)))
+
+(output "expr.egg" y)
+(extract y)
+
+(pop)
+
+(include "expr.egg")
