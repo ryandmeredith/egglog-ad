@@ -2,3 +2,14 @@
 (constructor Pair () Expr)
 (constructor Fst () Expr)
 (constructor Snd () Expr)
+
+; Convenience functions
+(constructor pair (Expr Expr) Expr :unextractable)
+(constructor fst (Expr) Expr :unextractable)
+(constructor snd (Expr) Expr :unextractable)
+
+(ruleset conv-pair)
+
+(rewrite (pair x y) (App (Pair) (vec-of x y)) :subsume :ruleset conv-pair)
+(rewrite (fst x) (App (Fst) (vec-of x)) :subsume :ruleset conv-pair)
+(rewrite (snd x) (App (Snd) (vec-of x)) :subsume :ruleset conv-pair)
