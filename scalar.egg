@@ -1,0 +1,23 @@
+; Scalar binary functions
+(constructor Add () Expr)
+(constructor Sub () Expr)
+(constructor Mul () Expr)
+(constructor Div () Expr)
+(constructor Pow () Expr)
+
+; Scalar unary functions
+(constructor Sin () Expr)
+(constructor Cos () Expr)
+(constructor Tan () Expr)
+(constructor Exp () Expr)
+(constructor Log () Expr)
+
+; Scalar comparison operators
+(constructor LT () Expr)
+(constructor GT () Expr)
+(constructor EQ () Expr)
+
+; Boolean operators
+(constructor And () Expr)
+(constructor Or () Expr)
+(constructor Not () Expr)

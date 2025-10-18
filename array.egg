@@ -1,0 +1,5 @@
+; Array functions
+(constructor Build () Expr)
+(constructor IFold () Expr)
+(constructor Length () Expr)
+(constructor Get () Expr)
