@@ -1,6 +1,0 @@
-(include "f-smooth.egg")
-(include "scalar.egg")
-(include "array.egg")
-(include "pair.egg")
-
-(unstable-combined-ruleset conv conv-scalar conv-array conv-pair)
