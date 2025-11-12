@@ -1,8 +1,11 @@
-mod builtins;
-
-use builtins::add_builtins;
 use egglog::{CommandOutput, EGraph, Error, UserDefinedCommand, ast::Expr, cli};
 use std::sync::Arc;
+
+mod builtins;
+mod deriv;
+mod utils;
+
+use builtins::add_builtins;
 
 struct FSmooth;
 

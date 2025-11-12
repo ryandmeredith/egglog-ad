@@ -1,4 +1,5 @@
-use egglog::ast::{Expr, Literal, Macro, ParseError, Parser, Sexp, Span};
+use crate::utils::apply;
+use egglog::ast::{Expr, Macro, ParseError, Parser, Sexp, Span};
 use std::sync::Arc;
 
 struct Builtin {
@@ -17,11 +18,8 @@ impl Macro<Expr> for Builtin {
     }
 
     fn parse(&self, args: &[Sexp], span: Span, parser: &mut Parser) -> Result<Expr, ParseError> {
-        let fun_name = Expr::Lit(span.clone(), Literal::String(self.name.into()));
-        let fun_var = Expr::Call(span.clone(), "Var".into(), vec![fun_name]);
         let arg_exprs = Result::from_iter(args.iter().map(|x| parser.parse_expr(x)))?;
-        let arg_vec = Expr::Call(span.clone(), "vec-of".into(), arg_exprs);
-        Ok(Expr::Call(span, "App".into(), vec![fun_var, arg_vec]))
+        Ok(apply(span, self.name, arg_exprs))
     }
 }
 
