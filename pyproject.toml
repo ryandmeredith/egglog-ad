@@ -1,0 +1,21 @@
+[project]
+name = "egglog-ad"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "egglog"
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "ty",
+    "ipython",
+    "python-lsp-server",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+[tool.ty.rules]
+invalid-return-type = "ignore"
