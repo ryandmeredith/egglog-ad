@@ -18,4 +18,6 @@ dev = [
 select = ["ALL"]
 
 [tool.ty.rules]
-invalid-return-type = "ignore"
+division-by-zero = "warn"
+possibly-unresolved-reference = "warn"
+unused-ignore-comment = "warn"

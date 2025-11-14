@@ -72,6 +72,7 @@
             packages = [
               virtualenv
               pkgs.uv
+              pkgs.graphviz
             ];
             env = {
               UV_NO_SYNC = "1";
