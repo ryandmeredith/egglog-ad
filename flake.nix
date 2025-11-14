@@ -15,9 +15,6 @@
       {
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
-            cargo
-            rust-analyzer
-            rustfmt
             egglog
             rlwrap
             graphviz

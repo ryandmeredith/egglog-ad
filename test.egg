@@ -1,0 +1,15 @@
+(include "ad.egg")
+
+(push)
+
+(let x (Var "x"))
+(let y (Add (Mul (Const 2.) x) (Mul (Mul x x) x)))
+(let yd (D y))
+
+(run-schedule (saturate (run deriv)))
+
+(output "expr.egg" yd)
+
+(pop)
+
+(include "expr.egg")

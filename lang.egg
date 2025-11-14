@@ -1,0 +1,57 @@
+(datatype*
+	(Expr
+		(Var String)
+		(Const f64)
+		(If Bool Expr Expr)
+
+		(Add Expr Expr)
+		(Sub Expr Expr)
+		(Mul Expr Expr)
+		(Div Expr Expr)
+		(Pow Expr Expr)
+
+		(Exp Expr)
+		(Log Expr)
+		(Sin Expr)
+		(Cos Expr)
+
+		(Build Card String Expr)
+		(IFold String String Expr Expr Card)
+		(Get Expr Index)
+	)
+
+	(Bool
+		(VarB String)
+		(ConstB bool)
+
+		(LT Expr Expr)
+		(GT Expr Expr)
+		(EQ Expr Expr)
+
+		(And Bool Bool)
+		(Or Bool Bool)
+		(Not Bool)
+	)
+
+	(Card
+		(VarC String)
+		(ConstC i64)
+
+		(AddC Card Card)
+		(SubC Card Card)
+		(MulC Card Card)
+		(PowC Card Card)
+
+		(Length Expr)
+	)
+
+	(Index
+		(VarI String)
+		(ConstI i64)
+
+		(AddI Index Index)
+		(SubI Index Index)
+		(MulI Index Index)
+		(PowI Index Index)
+	)
+)
