@@ -12,6 +12,8 @@ dev = [
     "ty",
     "ipython",
     "python-lsp-server",
+    "qtconsole",
+    "PySide6-Essentials",
 ]
 
 [tool.ruff.lint]

@@ -46,6 +46,43 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           python = pkgs.python3;
+          qtEnv =
+            with pkgs.qt6;
+            env "qt-env" [
+              qtbase
+              qtdeclarative
+              qtcharts
+              qtgraphs
+              qt3d
+              qtvirtualkeyboard
+              qtwebengine
+              qt3d
+              qtscxml
+              qtwayland
+              qtquick3d
+            ];
+
+          override = _final: prev: {
+            pyside6-essentials = prev.pyside6-essentials.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [
+                qtEnv
+                pkgs.gtk3
+                pkgs.mysql80
+                pkgs.libpq
+                pkgs.firebird
+                pkgs.cups.lib
+                pkgs.unixODBC
+              ];
+              preBuild = (old.preBuild or "") + ''
+                addAutoPatchelfSearchPath ${prev.shiboken6}/lib/python3.13/site-packages/shiboken6
+                addAutoPatchelfSearchPath ${pkgs.rigsofrods-bin}/share/rigsofrods/lib
+              '';
+              autoPatchelfIgnoreMissingDeps = [
+                "libclntsh.so.23.1"
+                "libmimerapi.so"
+              ];
+            });
+          };
         in
         (pkgs.callPackage pyproject-nix.build.packages {
           inherit python;
@@ -54,6 +91,7 @@
             lib.composeManyExtensions [
               pyproject-build-systems.overlays.wheel
               overlay
+              override
             ]
           )
       );
