@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable  # noqa: TC003
-
 from egglog import (
     Bool,
     BoolLike,
@@ -124,21 +122,8 @@ class Tensor(Expr):  # noqa: PLW1641
     def __eq__(self, other: TensorLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Equality comparison on scalars."""
 
-    def __ne__(self, other: TensorLike) -> Boolean:
-        """Not equal operator."""
-        return (self == other).n
-
-    def __le__(self, other: TensorLike) -> Boolean:
-        """Less than or equal operator."""
-        return (self < other) | (self == other)
-
-    def __gt__(self, other: TensorLike) -> Boolean:
+    def __gt__(self, other: TensorLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Greater than operator."""
-        return (self <= other).n
-
-    def __ge__(self, other: TensorLike) -> Boolean:
-        """Greater than or equal operator."""
-        return (self < other).n
 
     def length(self) -> Card:  # ty: ignore[invalid-return-type]
         """Length of arrray."""
@@ -154,13 +139,15 @@ converter(int, Tensor, lambda x: Tensor.const(float(x)))
 
 
 @function
-def build(size: CardLike, fun: Callable[[Index], TensorLike]) -> Tensor:  # ty: ignore[invalid-return-type]
+def build(size: CardLike, index: StringLike, fun: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
     """Build an array."""
 
 
 @function
 def ifold(
-    fun: Callable[[Tensor, Index], TensorLike],
+    acc: StringLike,
+    index: StringLike,
+    fun: TensorLike,
     init: TensorLike,
     length: CardLike,
 ) -> Tensor:  # ty: ignore[invalid-return-type]
