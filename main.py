@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Callable  # noqa: TC003
 
 from egglog import (
     Bool,
@@ -17,9 +17,6 @@ from egglog import (
     i64,
     i64Like,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
 
 
 class Card(Expr):
@@ -157,13 +154,13 @@ converter(int, Tensor, lambda x: Tensor.const(float(x)))
 
 
 @function
-def build(size: CardLike, fun: Callable[[TensorLike], Tensor]) -> Tensor:  # ty: ignore[invalid-return-type]
+def build(size: CardLike, fun: Callable[[Index], TensorLike]) -> Tensor:  # ty: ignore[invalid-return-type]
     """Build an array."""
 
 
 @function
 def ifold(
-    fun: Callable[[TensorLike, IndexLike], Tensor],
+    fun: Callable[[Tensor, Index], TensorLike],
     init: TensorLike,
     length: CardLike,
 ) -> Tensor:  # ty: ignore[invalid-return-type]
