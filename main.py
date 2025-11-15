@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from collections.abc import Iterable  # noqa: TC003
 
 from egglog import (
     Bool,
@@ -20,10 +20,6 @@ from egglog import (
     rewrite,
     ruleset,
 )
-
-if TYPE_CHECKING:
-    from collections.abc import Iterable
-
 
 simplify = ruleset(name="simplify")
 
@@ -119,6 +115,22 @@ class Tensor(Expr, ruleset=simplify):  # noqa: PLW1641
         """Negatae a scalar."""
         return self * Tensor.const(-1.0)
 
+    def exp(self) -> Tensor:  # ty: ignore[invalid-return-type]
+        """Exponentiate a scalar."""
+
+    def log(self) -> Tensor:  # ty: ignore[invalid-return-type]
+        """Logarithm of a scalar."""
+
+    def sin(self) -> Tensor:  # ty: ignore[invalid-return-type]
+        """Sine of a scalar."""
+
+    def cos(self) -> Tensor:  # ty: ignore[invalid-return-type]
+        """Cosine of a scalar."""
+
+    def tan(self) -> Tensor:
+        """Tangent of a scalar."""
+        return self.sin() / self.cos()
+
     def __eq__(self, other: TensorLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Equality comparison on scalars."""
 
@@ -155,32 +167,6 @@ converter(int, Tensor, lambda x: Tensor.const(float(x)))
 
 
 @function
-def exp(x: Tensor) -> Tensor:  # ty: ignore[invalid-return-type]
-    """Exponentiate a scalar."""
-
-
-@function
-def log(x: Tensor) -> Tensor:  # ty: ignore[invalid-return-type]
-    """Logarithm of a scalar."""
-
-
-@function
-def sin(x: Tensor) -> Tensor:  # ty: ignore[invalid-return-type]
-    """Sine of a scalar."""
-
-
-@function
-def cos(x: Tensor) -> Tensor:  # ty: ignore[invalid-return-type]
-    """Cosine of a scalar."""
-
-
-@function(ruleset=simplify)
-def tan(x: Tensor) -> Tensor:
-    """Tangent of a scalar."""
-    return sin(x) / cos(x)
-
-
-@function
 def build(size: CardLike, index: StringLike, fun: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
     """Build an array."""
 
@@ -213,18 +199,18 @@ def deriv(  # noqa: PLR0913
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
     yield rewrite(Tensor.var(v)).to(Tensor.var(v + "_d"))
-    yield rewrite(Tensor.const(c)).to(Tensor.const(0))
+    yield rewrite(Tensor.const(c)).to(Tensor.const(0.0))
 
     yield rewrite(diff(x + y)).to(diff(x) + diff(y))
     yield rewrite(diff(x - y)).to(diff(x) - diff(y))
     yield rewrite(diff(x * y)).to(diff(x) * y + x * diff(y))
     yield rewrite(diff(x / y)).to((diff(x) * y - x * diff(y)) / y**2)
-    yield rewrite(diff(x**y)).to((y * diff(x) / x + log(x) * diff(y)) * x**y)
+    yield rewrite(diff(x**y)).to((y * diff(x) / x + x.log() * diff(y)) * x**y)
 
-    yield rewrite(diff(exp(x))).to(diff(x) * exp(x))
-    yield rewrite(diff(log(x))).to(diff(x) / x)
-    yield rewrite(diff(sin(x))).to(diff(x) * cos(x))
-    yield rewrite(diff(cos(x))).to(-diff(x) * sin(x))
+    yield rewrite(diff(x.exp())).to(diff(x) * x.exp())
+    yield rewrite(diff(x.log())).to(diff(x) / x)
+    yield rewrite(diff(x.sin())).to(diff(x) * x.cos())
+    yield rewrite(diff(x.cos())).to(-diff(x) * x.sin())
 
     yield rewrite(diff(build(n, i, x))).to(build(n, i, diff(x)))
     yield rewrite(diff(x[j])).to(diff(x)[j])
