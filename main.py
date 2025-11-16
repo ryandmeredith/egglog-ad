@@ -22,7 +22,7 @@ from egglog import (
     ruleset,
 )
 
-simplify = ruleset(name="simplify")
+expand = ruleset(name="expand")
 
 
 class Card(Expr):
@@ -86,7 +86,7 @@ converter(String, Boolean, Boolean.var)
 converter(Bool, Boolean, Boolean.var)
 
 
-class Scalar(Expr, ruleset=simplify):  # noqa: PLW1641
+class Scalar(Expr, ruleset=expand):  # noqa: PLW1641
     """Scalar expression."""
 
     @classmethod
@@ -166,11 +166,11 @@ converter(f64, Scalar, Scalar.const)
 converter(int, Scalar, lambda x: Scalar.const(float(x)))
 
 
-class Vector(Expr):
+class Vector(Expr, ruleset=expand):
     """Vector expression."""
 
     @classmethod
-    def var(cls, name: StringLike) -> Vector:  # ty:ignore[invalid-return-type]
+    def var(cls, name: StringLike) -> Vector:  # ty: ignore[invalid-return-type]
         """Vector variable."""
 
     @classmethod
@@ -194,6 +194,12 @@ class Vector(Expr):
     def __getitem__(self, index: IndexLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Index a vector."""
 
+    @method(unextractable=True)
+    @classmethod
+    def zero(cls, length: CardLike) -> Vector:
+        """Zero vector."""
+        return cls.build(length, "x", 0)
+
 
 VectorLike = Vector | StringLike
 converter(String, Vector, Vector.var)
@@ -203,7 +209,7 @@ class Matrix(Expr):
     """Matrix expression."""
 
     @classmethod
-    def var(cls, name: StringLike) -> Matrix:  # ty:ignore[invalid-return-type]
+    def var(cls, name: StringLike) -> Matrix:  # ty: ignore[invalid-return-type]
         """Matrix variable."""
 
     @classmethod
@@ -233,30 +239,40 @@ converter(String, Matrix, Matrix.var)
 
 
 @function(unextractable=True)
-def diff(var: StringLike, fun: ScalarLike) -> Scalar:  # ty:ignore[invalid-return-type]
+def diff(var: StringLike, fun: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
     """Forward derivative of a scalar-scalar function."""
 
 
+@function(unextractable=True)
+def vdiff(var: StringLike, fun: VectorLike) -> Vector:  # ty: ignore[invalid-return-type]
+    """Forward derivative of a scalar-vector function."""
+
+
 @ruleset
-def deriv(
+def deriv(  # noqa: PLR0913
     x: Scalar,
     y: Scalar,
-    v: String,
-    w: String,
+    s: String,
+    t: String,
     c: f64,
+    v: Vector,
+    i: Index,
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
-    yield rewrite(diff(v, Scalar.var(v))).to(Scalar.const(1.0))
-    yield rewrite(diff(v, Scalar.var(w))).to(Scalar.const(0.0), v != w)
-    yield rewrite(diff(v, Scalar.const(c))).to(Scalar.const(0.0))
+    yield rewrite(diff(s, Scalar.var(s))).to(Scalar.const(1.0))
+    yield rewrite(diff(s, Scalar.var(t))).to(Scalar.const(0.0), s != t)
+    yield rewrite(diff(s, Scalar.const(c))).to(Scalar.const(0.0))
 
-    yield rewrite(diff(v, x + y)).to(diff(v, x) + diff(v, y))
-    yield rewrite(diff(v, x - y)).to(diff(v, x) - diff(v, y))
-    yield rewrite(diff(v, x * y)).to(diff(v, x) * y + x * diff(v, y))
-    yield rewrite(diff(v, x / y)).to((diff(v, x) * y - x * diff(v, y)) / y**2)
-    yield rewrite(diff(v, x**y)).to((y * diff(v, x) / x + x.log() * diff(v, y)) * x**y)
+    yield rewrite(diff(s, x + y)).to(diff(s, x) + diff(s, y))
+    yield rewrite(diff(s, x - y)).to(diff(s, x) - diff(s, y))
+    yield rewrite(diff(s, x * y)).to(diff(s, x) * y + x * diff(s, y))
+    yield rewrite(diff(s, x / y)).to((diff(s, x) * y - x * diff(s, y)) / y**2)
+    yield rewrite(diff(s, x**y)).to((y * diff(s, x) / x + x.log() * diff(s, y)) * x**y)
 
-    yield rewrite(diff(v, x.exp())).to(diff(v, x) * x.exp())
-    yield rewrite(diff(v, x.log())).to(diff(v, x) / x)
-    yield rewrite(diff(v, x.sin())).to(diff(v, x) * x.cos())
-    yield rewrite(diff(v, x.cos())).to(-diff(v, x) * x.sin())
+    yield rewrite(diff(s, x.exp())).to(diff(s, x) * x.exp())
+    yield rewrite(diff(s, x.log())).to(diff(s, x) / x)
+    yield rewrite(diff(s, x.sin())).to(diff(s, x) * x.cos())
+    yield rewrite(diff(s, x.cos())).to(-diff(s, x) * x.sin())
+
+    yield rewrite(diff(s, v[i])).to(vdiff(s, v)[i])
+    yield rewrite(vdiff(s, Vector.var(t))).to(Vector.zero(Vector.var(s).length()))
