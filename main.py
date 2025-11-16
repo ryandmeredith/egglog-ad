@@ -85,135 +85,172 @@ converter(String, Boolean, Boolean.var)
 converter(Bool, Boolean, Boolean.var)
 
 
-class Tensor(Expr, ruleset=simplify):  # noqa: PLW1641
-    """Tensor value."""
+class Scalar(Expr, ruleset=simplify):  # noqa: PLW1641
+    """Scalar expression."""
 
     @classmethod
-    def var(cls, name: StringLike) -> Tensor:  # ty: ignore[invalid-return-type]
-        """Tensor variable."""
+    def var(cls, name: StringLike) -> Scalar:  # ty: ignore[invalid-return-type]
+        """Scalar variable."""
 
     @classmethod
-    def const(cls, val: f64Like) -> Tensor:  # ty: ignore[invalid-return-type]
+    def const(cls, val: f64Like) -> Scalar:  # ty: ignore[invalid-return-type]
         """Constant scalar."""
 
-    def __add__(self, other: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
+    def __add__(self, other: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Add two scalars."""
 
-    def __sub__(self, other: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
+    def __sub__(self, other: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Subtract two scalars."""
 
-    def __mul__(self, other: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
+    def __mul__(self, other: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Multiply two scalars."""
 
-    def __truediv__(self, other: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
+    def __truediv__(self, other: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Divide two scalars."""
 
-    def __pow__(self, other: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
+    def __pow__(self, other: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
         """Scalar to a power."""
 
-    def __neg__(self) -> Tensor:
+    def __neg__(self) -> Scalar:
         """Negatae a scalar."""
-        return self * Tensor.const(-1.0)
+        return self * Scalar.const(-1.0)
 
-    def exp(self) -> Tensor:  # ty: ignore[invalid-return-type]
+    def exp(self) -> Scalar:  # ty: ignore[invalid-return-type]
         """Exponentiate a scalar."""
 
-    def log(self) -> Tensor:  # ty: ignore[invalid-return-type]
+    def log(self) -> Scalar:  # ty: ignore[invalid-return-type]
         """Logarithm of a scalar."""
 
-    def sin(self) -> Tensor:  # ty: ignore[invalid-return-type]
+    def sin(self) -> Scalar:  # ty: ignore[invalid-return-type]
         """Sine of a scalar."""
 
-    def cos(self) -> Tensor:  # ty: ignore[invalid-return-type]
+    def cos(self) -> Scalar:  # ty: ignore[invalid-return-type]
         """Cosine of a scalar."""
 
-    def tan(self) -> Tensor:
+    def tan(self) -> Scalar:
         """Tangent of a scalar."""
         return self.sin() / self.cos()
 
-    def __eq__(self, other: TensorLike) -> Boolean:  # ty: ignore[invalid-return-type]
+    def __eq__(self, other: ScalarLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Equality comparison on scalars."""
 
-    def __ne__(self, other: TensorLike) -> Boolean:
+    def __ne__(self, other: ScalarLike) -> Boolean:
         """Equality comparison on scalars."""
         return (self == other).n
 
-    def __lt__(self, other: TensorLike) -> Boolean:  # ty: ignore[invalid-return-type]
+    def __lt__(self, other: ScalarLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Less than comparison on scalars."""
 
-    def __le__(self, other: TensorLike) -> Boolean:
+    def __le__(self, other: ScalarLike) -> Boolean:
         """Less than comparison on scalars."""
         return (self < other) | (self == other)
 
-    def __gt__(self, other: TensorLike) -> Boolean:
+    def __gt__(self, other: ScalarLike) -> Boolean:
         """Greater than operator."""
         return (self <= other).n
 
-    def __ge__(self, other: TensorLike) -> Boolean:
+    def __ge__(self, other: ScalarLike) -> Boolean:
         """Greater than operator."""
         return (self < other).n
 
+
+ScalarLike = Scalar | StringLike | f64Like | int
+converter(String, Scalar, Scalar.var)
+converter(f64, Scalar, Scalar.const)
+converter(int, Scalar, lambda x: Scalar.const(float(x)))
+
+
+class Vector(Expr):
+    """Vector expression."""
+
+    @classmethod
+    def var(cls, name: StringLike) -> Vector:  # ty:ignore[invalid-return-type]
+        """Vector variable."""
+
+    @classmethod
+    def build(cls, size: CardLike, index: StringLike, fun: ScalarLike) -> Vector:  # ty: ignore[invalid-return-type]
+        """Build a vector."""
+
+    @classmethod
+    def ifold(
+        cls,
+        acc: StringLike,
+        index: StringLike,
+        fun: ScalarLike,
+        init: ScalarLike,
+        length: CardLike,
+    ) -> Scalar:  # ty: ignore[invalid-return-type]
+        """Fold over a vector."""
+
     def length(self) -> Card:  # ty: ignore[invalid-return-type]
-        """Length of arrray."""
+        """Length of a vector."""
 
-    def __getitem__(self, index: IndexLike) -> Tensor:  # ty: ignore[invalid-return-type]
-        """Index an array."""
-
-
-TensorLike = Tensor | StringLike | f64Like | int
-converter(String, Tensor, Tensor.var)
-converter(f64, Tensor, Tensor.const)
-converter(int, Tensor, lambda x: Tensor.const(float(x)))
+    def __getitem__(self, index: IndexLike) -> Scalar:  # ty: ignore[invalid-return-type]
+        """Index a vector."""
 
 
-@function
-def build(size: CardLike, index: StringLike, fun: TensorLike) -> Tensor:  # ty: ignore[invalid-return-type]
-    """Build an array."""
+VectorLike = Vector | StringLike
+converter(String, Vector, Vector.var)
 
 
-@function
-def ifold(
-    acc: StringLike,
-    index: StringLike,
-    fun: TensorLike,
-    init: TensorLike,
-    length: CardLike,
-) -> Tensor:  # ty: ignore[invalid-return-type]
-    """For loop."""
+class Matrix(Expr):
+    """Matrix expression."""
+
+    @classmethod
+    def var(cls, name: StringLike) -> Matrix:  # ty:ignore[invalid-return-type]
+        """Matrix variable."""
+
+    @classmethod
+    def build(cls, size: CardLike, index: StringLike, fun: VectorLike) -> Matrix:  # ty: ignore[invalid-return-type]
+        """Build a matrix."""
+
+    @classmethod
+    def ifold(
+        cls,
+        acc: StringLike,
+        index: StringLike,
+        fun: VectorLike,
+        init: VectorLike,
+        length: CardLike,
+    ) -> Vector:  # ty: ignore[invalid-return-type]
+        """Fold over a matrix."""
+
+    def length(self) -> Card:  # ty: ignore[invalid-return-type]
+        """Length of a matrix."""
+
+    def __getitem__(self, index: IndexLike) -> Vector:  # ty: ignore[invalid-return-type]
+        """Index a matrix."""
+
+
+MatrixLike = Matrix | StringLike
+converter(String, Matrix, Matrix.var)
 
 
 @function(unextractable=True)
-def diff(term: Tensor) -> Tensor:  # ty:ignore[invalid-return-type]
-    """Forward derivative of a term."""
+def diff(var: StringLike, fun: ScalarLike) -> Scalar:  # ty:ignore[invalid-return-type]
+    """Forward derivative of a scalar-scalar function."""
 
 
 @ruleset
-def deriv(  # noqa: PLR0913
-    x: Tensor,
-    y: Tensor,
+def deriv(
+    x: Scalar,
+    y: Scalar,
     v: String,
+    w: String,
     c: f64,
-    n: Card,
-    i: String,
-    j: Index,
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
-    yield rewrite(diff(Tensor.var(v))).to(Tensor.var(v + "_d"))
-    yield rewrite(diff(Tensor.const(c))).to(Tensor.const(0.0))
+    yield rewrite(diff(v, Scalar.var(v))).to(Scalar.const(1.0))
+    yield rewrite(diff(v, Scalar.var(w))).to(Scalar.const(0.0), v != w)
+    yield rewrite(diff(v, Scalar.const(c))).to(Scalar.const(0.0))
 
-    yield rewrite(diff(x + y)).to(diff(x) + diff(y))
-    yield rewrite(diff(x - y)).to(diff(x) - diff(y))
-    yield rewrite(diff(x * y)).to(diff(x) * y + x * diff(y))
-    yield rewrite(diff(x / y)).to((diff(x) * y - x * diff(y)) / y**2)
-    yield rewrite(diff(x**y)).to((y * diff(x) / x + x.log() * diff(y)) * x**y)
+    yield rewrite(diff(v, x + y)).to(diff(v, x) + diff(v, y))
+    yield rewrite(diff(v, x - y)).to(diff(v, x) - diff(v, y))
+    yield rewrite(diff(v, x * y)).to(diff(v, x) * y + x * diff(v, y))
+    yield rewrite(diff(v, x / y)).to((diff(v, x) * y - x * diff(v, y)) / y**2)
+    yield rewrite(diff(v, x**y)).to((y * diff(v, x) / x + x.log() * diff(v, y)) * x**y)
 
-    yield rewrite(diff(x.exp())).to(diff(x) * x.exp())
-    yield rewrite(diff(x.log())).to(diff(x) / x)
-    yield rewrite(diff(x.sin())).to(diff(x) * x.cos())
-    yield rewrite(diff(x.cos())).to(-diff(x) * x.sin())
-
-    yield rewrite(diff(build(n, i, x))).to(build(n, i, diff(x)))
-    yield rewrite(diff(x[j])).to(diff(x)[j])
-    yield rewrite(diff(ifold(v, i, x, y, n))).to(
-        ifold(v + "_d", i, diff(x), diff(y), n),
-    )
+    yield rewrite(diff(v, x.exp())).to(diff(v, x) * x.exp())
+    yield rewrite(diff(v, x.log())).to(diff(v, x) / x)
+    yield rewrite(diff(v, x.sin())).to(diff(v, x) * x.cos())
+    yield rewrite(diff(v, x.cos())).to(-diff(v, x) * x.sin())
