@@ -17,6 +17,7 @@ from egglog import (
     function,
     i64,
     i64Like,
+    method,
     rewrite,
     ruleset,
 )
@@ -127,6 +128,7 @@ class Scalar(Expr, ruleset=simplify):  # noqa: PLW1641
     def cos(self) -> Scalar:  # ty: ignore[invalid-return-type]
         """Cosine of a scalar."""
 
+    @method(unextractable=True)
     def tan(self) -> Scalar:
         """Tangent of a scalar."""
         return self.sin() / self.cos()
@@ -134,6 +136,7 @@ class Scalar(Expr, ruleset=simplify):  # noqa: PLW1641
     def __eq__(self, other: ScalarLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Equality comparison on scalars."""
 
+    @method(unextractable=True)
     def __ne__(self, other: ScalarLike) -> Boolean:
         """Equality comparison on scalars."""
         return (self == other).n
@@ -141,14 +144,17 @@ class Scalar(Expr, ruleset=simplify):  # noqa: PLW1641
     def __lt__(self, other: ScalarLike) -> Boolean:  # ty: ignore[invalid-return-type]
         """Less than comparison on scalars."""
 
+    @method(unextractable=True)
     def __le__(self, other: ScalarLike) -> Boolean:
         """Less than comparison on scalars."""
         return (self < other) | (self == other)
 
+    @method(unextractable=True)
     def __gt__(self, other: ScalarLike) -> Boolean:
         """Greater than operator."""
         return (self <= other).n
 
+    @method(unextractable=True)
     def __ge__(self, other: ScalarLike) -> Boolean:
         """Greater than operator."""
         return (self < other).n
