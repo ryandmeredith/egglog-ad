@@ -198,8 +198,8 @@ def deriv(  # noqa: PLR0913
     j: Index,
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
-    yield rewrite(Tensor.var(v)).to(Tensor.var(v + "_d"))
-    yield rewrite(Tensor.const(c)).to(Tensor.const(0.0))
+    yield rewrite(diff(Tensor.var(v))).to(Tensor.var(v + "_d"))
+    yield rewrite(diff(Tensor.const(c))).to(Tensor.const(0.0))
 
     yield rewrite(diff(x + y)).to(diff(x) + diff(y))
     yield rewrite(diff(x - y)).to(diff(x) - diff(y))
