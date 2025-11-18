@@ -82,6 +82,9 @@
                 "libmimerapi.so"
               ];
             });
+            numba = prev.numba.overrideAttrs (old: {
+              buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.onetbb ];
+            });
           };
         in
         (pkgs.callPackage pyproject-nix.build.packages {
