@@ -22,7 +22,7 @@ from egglog import (
     ruleset,
 )
 
-expand = ruleset(name="expand")
+expand = ruleset()
 
 
 class Card(Expr):
@@ -205,7 +205,7 @@ VectorLike = Vector | StringLike
 converter(String, Vector, Vector.var)
 
 
-class Matrix(Expr):
+class Matrix(Expr, ruleset=expand):
     """Matrix expression."""
 
     @classmethod
@@ -233,6 +233,12 @@ class Matrix(Expr):
     def __getitem__(self, index: IndexLike) -> Vector:  # ty: ignore[invalid-return-type]
         """Index a matrix."""
 
+    @method(unextractable=True)
+    @classmethod
+    def zero(cls, m: CardLike, n: CardLike) -> Matrix:
+        """Zero matrix."""
+        return cls.build(m, "x", Vector.zero(n))
+
 
 MatrixLike = Matrix | StringLike
 converter(String, Matrix, Matrix.var)
@@ -248,15 +254,24 @@ def vdiff(var: StringLike, fun: VectorLike) -> Vector:  # ty: ignore[invalid-ret
     """Forward derivative of a scalar-vector function."""
 
 
+@function(unextractable=True)
+def mdiff(var: StringLike, fun: MatrixLike) -> Matrix:  # ty: ignore[invalid-return-type]
+    """Forward derivative of a scalar-matrix function."""
+
+
 @ruleset
 def deriv(  # noqa: PLR0913
     x: Scalar,
     y: Scalar,
     s: String,
     t: String,
+    u: String,
     c: f64,
     v: Vector,
+    w: Vector,
+    m: Matrix,
     i: Index,
+    n: Card,
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
     yield rewrite(diff(s, Scalar.var(s))).to(Scalar.const(1.0))
@@ -275,4 +290,17 @@ def deriv(  # noqa: PLR0913
     yield rewrite(diff(s, x.cos())).to(-diff(s, x) * x.sin())
 
     yield rewrite(diff(s, v[i])).to(vdiff(s, v)[i])
-    yield rewrite(vdiff(s, Vector.var(t))).to(Vector.zero(Vector.var(s).length()))
+    yield rewrite(diff(s, Vector.ifold(t, u, x, y, n))).to(
+        Vector.ifold(t, u, diff(s, x), diff(s, y), n),
+    )
+    yield rewrite(vdiff(s, Vector.var(t))).to(Vector.zero(Vector.var(t).length()))
+    yield rewrite(vdiff(s, Vector.build(n, t, x))).to(Vector.build(n, t, diff(s, x)))
+
+    yield rewrite(vdiff(s, m[i])).to(mdiff(s, m)[i])
+    yield rewrite(vdiff(s, Matrix.ifold(t, u, v, w, n))).to(
+        Matrix.ifold(t, u, vdiff(s, v), vdiff(s, w), n),
+    )
+    yield rewrite(mdiff(s, Matrix.var(t))).to(
+        Matrix.zero(Matrix.var(t).length(), Matrix.var(t)[0].length()),
+    )
+    yield rewrite(mdiff(s, Matrix.build(n, t, v))).to(Matrix.build(n, t, vdiff(s, v)))
