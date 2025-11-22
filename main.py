@@ -166,6 +166,11 @@ converter(f64, Scalar, Scalar.const)
 converter(int, Scalar, lambda x: Scalar.const(float(x)))
 
 
+@function
+def cond(condition: BooleanLike, if_true: ScalarLike, if_false: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
+    """If expression."""
+
+
 class Vector(Expr, ruleset=expand):
     """Vector expression."""
 
@@ -267,6 +272,7 @@ def deriv(  # noqa: PLR0913
     t: String,
     u: String,
     c: f64,
+    b: Boolean,
     v: Vector,
     w: Vector,
     m: Matrix,
@@ -277,6 +283,7 @@ def deriv(  # noqa: PLR0913
     yield rewrite(diff(s, Scalar.var(s))).to(Scalar.const(1.0))
     yield rewrite(diff(s, Scalar.var(t))).to(Scalar.const(0.0), s != t)
     yield rewrite(diff(s, Scalar.const(c))).to(Scalar.const(0.0))
+    yield rewrite(diff(s, cond(b, x, y))).to(cond(b, diff(s, x), diff(s, y)))
 
     yield rewrite(diff(s, x + y)).to(diff(s, x) + diff(s, y))
     yield rewrite(diff(s, x - y)).to(diff(s, x) - diff(s, y))
