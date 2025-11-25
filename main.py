@@ -269,9 +269,9 @@ def mdiff(inp: ScalarLike, out: MatrixLike) -> Matrix:  # ty: ignore[invalid-ret
 def deriv(  # noqa: PLR0913
     x: Scalar,
     y: Scalar,
+    z: Scalar,
     s: String,
     t: String,
-    u: String,
     c: f64,
     b: Boolean,
     v: Vector,
@@ -290,31 +290,45 @@ def deriv(  # noqa: PLR0913
     yield rewrite(diff(x, x), subsume=True).to(Scalar.const(1.0))
     yield ss(x, s, 0)
     yield ss(x, c, 0)
-    yield rewrite(diff(s, cond(b, x, y))).to(cond(b, diff(s, x), diff(s, y)))
+    yield ss(x, cond(b, y, z), cond(b, diff(x, y), diff(x, z)))
 
-    yield rewrite(diff(s, x + y)).to(diff(s, x) + diff(s, y))
-    yield rewrite(diff(s, x - y)).to(diff(s, x) - diff(s, y))
-    yield rewrite(diff(s, x * y)).to(diff(s, x) * y + x * diff(s, y))
-    yield rewrite(diff(s, x / y)).to((diff(s, x) * y - x * diff(s, y)) / y**2)
-    yield rewrite(diff(s, x**y)).to((y * diff(s, x) / x + x.log() * diff(s, y)) * x**y)
+    yield ss(x, y + z, diff(x, y) + diff(x, z))
+    yield ss(x, y - z, diff(x, y) - diff(x, z))
+    yield ss(x, y * z, diff(x, y) * z + y * diff(x, z))
+    yield ss(x, y / z, (diff(x, y) * z - y * diff(x, z)) / y**2)
+    yield ss(x, y**z, (z * diff(x, y) / y + y.log() * diff(x, z)) * y**z)
 
-    yield rewrite(diff(s, x.exp())).to(diff(s, x) * x.exp())
-    yield rewrite(diff(s, x.log())).to(diff(s, x) / x)
-    yield rewrite(diff(s, x.sin())).to(diff(s, x) * x.cos())
-    yield rewrite(diff(s, x.cos())).to(-diff(s, x) * x.sin())
+    yield ss(x, y.exp(), diff(x, y) * y.exp())
+    yield ss(x, y.log(), diff(x, y) / y)
+    yield ss(x, y.sin(), diff(x, y) * y.cos())
+    yield ss(x, y.cos(), -diff(x, y) * y.sin())
 
-    yield rewrite(diff(s, v[i])).to(vdiff(s, v)[i])
-    yield rewrite(diff(s, Vector.ifold(t, u, x, y, n))).to(
-        Vector.ifold(t, u, diff(s, x), diff(s, y), n),
+    yield ss(x, v[i], vdiff(x, v)[i])
+    yield ss(
+        x,
+        Vector.ifold(s, t, y, z, n),
+        Vector.ifold(s, t, diff(x, y), diff(x, z), n),
     )
-    yield rewrite(vdiff(s, Vector.var(t))).to(Vector.zero(Vector.var(t).length()))
-    yield rewrite(vdiff(s, Vector.build(n, t, x))).to(Vector.build(n, t, diff(s, x)))
 
-    yield rewrite(vdiff(s, m[i])).to(mdiff(s, m)[i])
-    yield rewrite(vdiff(s, Matrix.ifold(t, u, v, w, n))).to(
-        Matrix.ifold(t, u, vdiff(s, v), vdiff(s, w), n),
+    def sv(var: Scalar, e1: VectorLike, e2: VectorLike) -> RewriteOrRule:
+        e1 = convert(e1, Vector)
+        e2 = convert(e2, Vector)
+        return rewrite(vdiff(var, e1)).to(e2)
+
+    yield sv(x, s, Vector.zero(Vector.var(s).length()))
+    yield sv(x, Vector.build(n, s, y), Vector.build(n, s, diff(x, y)))
+
+    yield sv(x, m[i], mdiff(x, m)[i])
+    yield sv(
+        x,
+        Matrix.ifold(s, t, v, w, n),
+        Matrix.ifold(s, t, vdiff(x, v), vdiff(x, w), n),
     )
-    yield rewrite(mdiff(s, Matrix.var(t))).to(
-        Matrix.zero(Matrix.var(t).length(), Matrix.var(t)[0].length()),
-    )
-    yield rewrite(mdiff(s, Matrix.build(n, t, v))).to(Matrix.build(n, t, vdiff(s, v)))
+
+    def sm(var: Scalar, e1: MatrixLike, e2: MatrixLike) -> RewriteOrRule:
+        e1 = convert(e1, Matrix)
+        e2 = convert(e2, Matrix)
+        return rewrite(mdiff(var, e1)).to(e2)
+
+    yield sm(x, s, Matrix.zero(Matrix.var(s).length(), Matrix.var(s)[0].length()))
+    yield sm(x, Matrix.build(n, s, v), Matrix.build(n, s, vdiff(x, v)))
