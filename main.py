@@ -11,6 +11,7 @@ from egglog import (
     RewriteOrRule,
     String,
     StringLike,
+    convert,
     converter,
     f64,
     f64Like,
@@ -250,17 +251,17 @@ converter(String, Matrix, Matrix.var)
 
 
 @function(unextractable=True)
-def diff(var: StringLike, fun: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
+def diff(inp: ScalarLike, out: ScalarLike) -> Scalar:  # ty: ignore[invalid-return-type]
     """Forward derivative of a scalar-scalar function."""
 
 
 @function(unextractable=True)
-def vdiff(var: StringLike, fun: VectorLike) -> Vector:  # ty: ignore[invalid-return-type]
+def vdiff(inp: ScalarLike, out: VectorLike) -> Vector:  # ty: ignore[invalid-return-type]
     """Forward derivative of a scalar-vector function."""
 
 
 @function(unextractable=True)
-def mdiff(var: StringLike, fun: MatrixLike) -> Matrix:  # ty: ignore[invalid-return-type]
+def mdiff(inp: ScalarLike, out: MatrixLike) -> Matrix:  # ty: ignore[invalid-return-type]
     """Forward derivative of a scalar-matrix function."""
 
 
@@ -280,9 +281,15 @@ def deriv(  # noqa: PLR0913
     n: Card,
 ) -> Iterable[RewriteOrRule]:
     """Rules for derivatives."""
-    yield rewrite(diff(s, Scalar.var(s))).to(Scalar.const(1.0))
-    yield rewrite(diff(s, Scalar.var(t))).to(Scalar.const(0.0), s != t)
-    yield rewrite(diff(s, Scalar.const(c))).to(Scalar.const(0.0))
+
+    def ss(var: Scalar, e1: ScalarLike, e2: ScalarLike) -> RewriteOrRule:
+        e1 = convert(e1, Scalar)
+        e2 = convert(e2, Scalar)
+        return rewrite(diff(var, e1)).to(e2, var != e1)
+
+    yield rewrite(diff(x, x), subsume=True).to(Scalar.const(1.0))
+    yield ss(x, s, 0)
+    yield ss(x, c, 0)
     yield rewrite(diff(s, cond(b, x, y))).to(cond(b, diff(s, x), diff(s, y)))
 
     yield rewrite(diff(s, x + y)).to(diff(s, x) + diff(s, y))
