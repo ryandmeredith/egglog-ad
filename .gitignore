@@ -1,8 +1,2 @@
 expr.egg
 test.svg
-
-
-# Added by cargo
-
-/target
-__pycache__

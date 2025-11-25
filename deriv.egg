@@ -1,0 +1,35 @@
+(ruleset deriv)
+
+(constructor D (Expr) Expr :unextractable)
+
+(rewrite (D (App f xs)) (App (D f) (vec-empty)) :when ((= (vec-length xs) 0)) :ruleset deriv)
+(rewrite (D (Lam vs e)) (Lam vs (D e)) :ruleset deriv)
+(rewrite (D (Var s)) (Var s) :ruleset deriv)
+(rewrite (D (Int n)) (Int n) :ruleset deriv)
+(rewrite (D (Const x)) (Const 0.) :ruleset deriv)
+(rewrite (D (Cond b t f)) (Cond b (D t) (D f)) :ruleset deriv)
+
+(rewrite (D (Add x y)) (Add (D x) (D y)) :ruleset deriv)
+(rewrite (D (Sub x y)) (Sub (D x) (D y)) :ruleset deriv)
+(rewrite (D (Mul x y)) (Add (Mul (D x) y) (Mul x (D y))) :ruleset deriv)
+(rewrite (D (Div x y)) (Div (Sub (Mul (D x) y) (Mul x (D y))) (Pow y (Const 2.))) :ruleset deriv)
+(rewrite (D (Pow x y)) (Mul (Add (Div (Mul (D x) y) x) (Mul (D y) (Log x))) (Pow x y)) :ruleset deriv)
+
+(rewrite (D (Neg x)) (Neg (D x)) :ruleset deriv)
+(rewrite (D (Exp x)) (Mul (D x) (Exp x)) :ruleset deriv)
+(rewrite (D (Log x)) (Div (D x) x) :ruleset deriv)
+(rewrite (D (Sin x)) (Mul (D x) (Cos x)) :ruleset deriv)
+(rewrite (D (Cos x)) (Mul (D x) (Neg (Sin x))) :ruleset deriv)
+
+(rewrite (D (LT x y)) (LT x y) :ruleset deriv)
+(rewrite (D (GT x y)) (GT x y) :ruleset deriv)
+(rewrite (D (EQ x y)) (EQ x y) :ruleset deriv)
+
+(rewrite (D (And x y)) (And x y) :ruleset deriv)
+(rewrite (D (Or x y)) (Or x y) :ruleset deriv)
+(rewrite (D (Not x)) (Not x) :ruleset deriv)
+
+(rewrite (D (Build n f)) (Build n (D f)) :ruleset deriv)
+(rewrite (D (IFold f z n)) (IFold (D f) (D z) n) :ruleset deriv)
+(rewrite (D (Get a i)) (Get (D a) i) :ruleset deriv)
+(rewrite (D (Length a)) (Length a) :ruleset deriv)

@@ -1,0 +1,38 @@
+(datatype*
+	(sort StringVec (Vec String))
+	(sort ExprVec (Vec Expr))
+
+	(Expr
+		(App Expr ExprVec)
+		(Lam StringVec Expr)
+		(Var String)
+		(Int i64)
+		(Const f64)
+		(Cond Expr Expr Expr)
+
+		(Add Expr Expr)
+		(Sub Expr Expr)
+		(Mul Expr Expr)
+		(Div Expr Expr)
+		(Pow Expr Expr)
+
+		(Neg Expr)
+		(Exp Expr)
+		(Log Expr)
+		(Sin Expr)
+		(Cos Expr)
+
+		(LT Expr Expr)
+		(GT Expr Expr)
+		(EQ Expr Expr)
+
+		(And Expr Expr)
+		(Or Expr Expr)
+		(Not Expr)
+
+		(Build Expr Expr)
+		(IFold Expr Expr Expr)
+		(Get Expr Expr)
+		(Length Expr)
+	)
+)
