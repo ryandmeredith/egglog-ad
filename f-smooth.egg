@@ -30,4 +30,8 @@
 	(IFold Expr Expr Expr)
 	(Get Expr Expr)
 	(Length Expr)
+
+	(Pair Expr Expr)
+	(Fst Expr)
+	(Snd Expr)
 )

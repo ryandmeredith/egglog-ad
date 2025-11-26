@@ -5,10 +5,10 @@
 (let x (Var "x"))
 (let v (Build (Int 10) (Lam "i" x)))
 (let y (IFold (Lam "a" (Lam "i" (Add (Var "a") (Get v (Var "i"))))) (Const 0.) (Length v)))
+(let f (Lam "x" y))
 
-(let vd (D v))
-(let yd (D y))
+(let fd (D f))
 
 (run-schedule (saturate deriv))
 
-(extract yd)
+(extract fd)
