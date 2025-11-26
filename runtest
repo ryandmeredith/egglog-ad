@@ -1,0 +1,2 @@
+rm -f expr.egg
+egglog -j0 --to-svg test.egg

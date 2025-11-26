@@ -1,2 +1,5 @@
 (include "f-smooth.egg")
+(include "m-smooth.egg")
 (include "deriv.egg")
+
+(unstable-combined-ruleset ad expand deriv)

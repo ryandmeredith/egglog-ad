@@ -23,3 +23,9 @@
 (rewrite (D (Build n f)) (Build n (D f)) :ruleset deriv)
 (rewrite (D (IFold f z n)) (IFold (D f) (D z) n) :ruleset deriv)
 (rewrite (D (Get a i)) (Get (D a) i) :ruleset deriv)
+
+(constructor Diff (Expr) Expr :unextractable)
+(rewrite (Diff f) (Lam "__x" (App (D f) (Pair (Var "__x") (Const 1.)))) :ruleset deriv)
+
+(constructor Grad (Expr) Expr :unextractable)
+(rewrite (Grad f) (Lam "__v" (Build (Length (Var "__v")) (Lam "__i" (App (D f) (VectorZip (Var "__v") (VectorHot (Length (Var "__v")) (Var "__i"))))))) :ruleset deriv)

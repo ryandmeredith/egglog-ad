@@ -1,0 +1,7 @@
+(ruleset expand)
+
+(constructor VectorHot (Expr Expr) Expr)
+(rewrite (VectorHot n i) (Build n (Lam "__j" (Cond (EQ i (Var "__j")) (Const 1.) (Const 0.)))) :ruleset expand)
+
+(constructor VectorZip (Expr Expr) Expr)
+(rewrite (VectorZip v w) (Build (Length v) (Lam "__i" (Pair (Get v (Var "__i")) (Get w (Var "__i"))))) :ruleset expand)
