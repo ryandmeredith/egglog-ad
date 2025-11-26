@@ -1,0 +1,14 @@
+(include "ad.egg")
+
+(push)
+
+(let x (Var "x"))
+(let v (Build (Int 10) (Lam "i" x)))
+(let y (IFold (Lam "a" (Lam "i" (Add (Var "a") (Get v (Var "i"))))) (Const 0.) (Length v)))
+
+(let vd (D v))
+(let yd (D y))
+
+(run-schedule (saturate deriv))
+
+(extract yd)
