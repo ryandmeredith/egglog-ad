@@ -14,7 +14,10 @@
 (let fd (Diff f))
 (let gd (Grad g))
 
-(run-schedule (saturate ad))
+(run-schedule (saturate optim))
+(run-schedule (saturate deriv))
+(run-schedule (saturate expand))
+(run-schedule (saturate optim))
 
 (output "expr.egg" gd)
 
