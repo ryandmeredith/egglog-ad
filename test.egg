@@ -2,22 +2,14 @@
 
 (push)
 
-(let x (Var "x"))
-(let n (Int 10))
-(let v (Build n (Lam "i" x)))
-(let w (Var "v"))
-(let y (IFold (Lam "a" (Lam "i" (Mul (Var "a") (Get v (Var "i"))))) (Const 1.) (Length v)))
-(let f (Lam "x" y))
-(let z (IFold (Lam "a" (Lam "i" (Add (Var "a") (Get w (Var "i"))))) (Const 0.) (Length w)))
-(let g (Lam "v" z))
+(let f (Lam (IFold (Lam (Lam (Add (Var 1) (Get (Var 2) (Var 0))))) (Const 0.) (Length (Var 2)))))
 
-(let fd (Diff f))
-(let gd (Grad g))
+(let fd (Grad f))
 
-(run ad 50)
+(run-schedule (saturate ad))
 
-;(output "expr.egg" gd)
+(output "expr.egg" fd)
 
-;(pop)
+(pop)
 
-;(include "expr.egg")
+(include "expr.egg")

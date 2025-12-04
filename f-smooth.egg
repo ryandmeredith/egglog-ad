@@ -1,7 +1,7 @@
 (datatype Expr
 	(App Expr Expr)
-	(Lam String Expr)
-	(Var String)
+	(Lam Expr)
+	(Var i64)
 	(Int i64)
 	(Const f64)
 	(Cond Expr Expr Expr)
