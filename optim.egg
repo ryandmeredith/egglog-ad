@@ -16,7 +16,7 @@
 (rewrite (App g (Cond p t f)) (Cond p (App g t) (App g f)) :ruleset optim)
 
 (rewrite (IFold f z (Int 0)) z :ruleset optim)
-(rewrite (IFold f z (Int n)) (IFold (Lam (Lam (App (App f (Var 1)) (Add (Var 0) (Int 1))))) (App (App f z) (Int 0)) (Int (- n 1))) :when ((> n 0)) :ruleset optim)
+(rewrite (IFold f z (Int n)) (IFold (Lam (Lam (App (App (Shift 0 2 f) (Var 1)) (Add (Var 0) (Int 1))))) (App (App f z) (Int 0)) (Int (- n 1))) :when ((> n 0)) :ruleset optim)
 (rewrite (IFold (Lam (Lam (Var 1))) z n) z :ruleset optim)
 
 (rewrite (Fst (Pair x y)) x :ruleset optim)

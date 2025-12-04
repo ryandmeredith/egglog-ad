@@ -3,4 +3,4 @@
 (include "deriv.egg")
 (include "optim.egg")
 
-(unstable-combined-ruleset ad expand deriv optim)
+(unstable-combined-ruleset ad shift expand deriv optim)

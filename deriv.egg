@@ -29,7 +29,7 @@
 (rewrite (D (Snd x)) (Snd (D x)) :ruleset deriv)
 
 (constructor Diff (Expr) Expr :unextractable)
-(rewrite (Diff f) (Lam (App (D f) (Pair (Var 0) (Const 1.)))) :ruleset deriv)
+(rewrite (Diff f) (Lam (App (D (Shift 0 1 f)) (Pair (Var 0) (Const 1.)))) :ruleset deriv)
 
 (constructor Grad (Expr) Expr :unextractable)
-(rewrite (Grad f) (Lam (Build (Length (Var 0)) (Lam (App (D f) (VectorZip (Var 1) (VectorHot (Length (Var 1)) (Var 0))))))) :ruleset deriv)
+(rewrite (Grad f) (Lam (Build (Length (Var 0)) (Lam (App (D (Shift 0 2 f)) (VectorZip (Var 1) (VectorHot (Length (Var 1)) (Var 0))))))) :ruleset deriv)
