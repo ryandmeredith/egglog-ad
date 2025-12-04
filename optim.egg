@@ -1,5 +1,7 @@
 (ruleset optim)
 
+;(rule ((= y (App (Lam v e1) e2))) ((union y e1) (union e2 (Var v))) :ruleset optim)
+
 (rewrite (Add x (Const 0.)) x :ruleset optim)
 (rewrite (Add (Const 0.) x) x :ruleset optim)
 (rewrite (Mul x (Const 1.)) x :ruleset optim)
@@ -16,7 +18,7 @@
 (rewrite (App g (Cond p t f)) (Cond p (App g t) (App g f)) :ruleset optim)
 
 (rewrite (IFold f z (Int 0)) z :ruleset optim)
-(rewrite (IFold f z (Int n)) (IFold (Lam "__a" (Lam "__i" (App (App f (Var "__a")) (Add (Var "__i") (Const 1.))))) (App (App f z) (Const 0.)) (Int (- n 1))) :ruleset optim)
+(rewrite (IFold f z (Int n)) (IFold (Lam "__b" (Lam "__l" (App (App f (Var "__b")) (Add (Var "__l") (Int 1))))) (App (App f z) (Int 0)) (Int (- n 1))) :ruleset optim :when ((> n 0)))
 (rewrite (IFold (Lam a (Lam i (Var a))) z n) z :ruleset optim)
 
 (rewrite (Fst (Pair x y)) x :ruleset optim)
