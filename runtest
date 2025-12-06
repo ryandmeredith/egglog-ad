@@ -1,2 +1,0 @@
-rm --force expr.egg
-egglog --threads 0 --to-svg test.egg

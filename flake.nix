@@ -48,6 +48,10 @@
                     | where matches > $it.matches_
                     | get rule
                   }
+                  def runtest [] {
+                    rm --force expr.egg
+                    egglog --threads 0 --to-svg test.egg
+                  }
                 '
                 exit
               '';
