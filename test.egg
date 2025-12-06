@@ -2,7 +2,7 @@
 
 (push)
 
-(let f (Lam (IFold (Lam (Lam (Add (Var 1) (Get (Var 2) (Var 0))))) (Const 0.) (Length (Var 2)))))
+(let f (Lam (IFold (Lam (Lam (Add (Var 1) (Get (Var 2) (Var 0))))) (Const 0.) (Length (Var 0)))))
 
 (let fd (Grad f))
 
