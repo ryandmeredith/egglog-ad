@@ -34,7 +34,23 @@
                 egglog1
                 rlwrap
                 graphviz
+                xdot
               ];
+              shellHook = ''
+                nu --execute '
+                  def gather [] {
+                    parse --regex `Rule (?<rule>.*): search and apply \d+(?:\.\d+)?s, num matches (?<matches>\d+)`
+                    | update matches { into int }
+                    | sort-by matches
+                  }
+                  def new_rules [old: table] {
+                    join $old rule
+                    | where matches > $it.matches_
+                    | get rule
+                  }
+                '
+                exit
+              '';
             };
           };
       }
