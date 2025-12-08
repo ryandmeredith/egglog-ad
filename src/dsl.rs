@@ -1,7 +1,7 @@
 use egglog::{EGraph, SerializeConfig, ast::Expr};
 use std::{
     error::Error,
-    ops::{Add, BitAnd, BitOr, Div, Mul, Not, Sub},
+    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
     path::Path,
     sync::atomic::{AtomicU32, Ordering},
 };
@@ -32,6 +32,12 @@ impl DLike for Arg {
     }
 }
 
+impl DLike for f64 {
+    fn val(self) -> D {
+        D::constant(self)
+    }
+}
+
 macro_rules! fn_impl {
     ($prim:ident, $fun:ident $(, $vis:vis)?) => {
         $($vis)? fn $fun(self) -> D {
@@ -50,28 +56,28 @@ macro_rules! bin_impl {
 
 macro_rules! op_impl {
     ($prim:ident, $trait:ident, $fun:ident) => {
-        impl $trait for D {
+        impl<T: DLike> $trait<T> for D {
             type Output = Self;
-            fn $fun(self, other: Self) -> Self {
-                Self(app_prim(stringify!($prim), [self.0, other.0]))
-            }
-        }
-        impl $trait<Arg> for D {
-            type Output = Self;
-            fn $fun(self, other: Arg) -> Self {
+            fn $fun(self, other: T) -> Self {
                 Self(app_prim(stringify!($prim), [self.0, other.val().0]))
             }
         }
-        impl $trait for Arg {
+        impl<T: DLike> $trait<T> for Arg {
             type Output = D;
-            fn $fun(self, other: Self) -> D {
+            fn $fun(self, other: T) -> D {
                 D(app_prim(stringify!($prim), [self.val().0, other.val().0]))
             }
         }
-        impl $trait<D> for Arg {
+        impl $trait<D> for f64 {
             type Output = D;
             fn $fun(self, other: D) -> D {
-                D(app_prim(stringify!($prim), [self.val().0, other.0]))
+                D(app_prim(stringify!($prim), [real(self), other.0]))
+            }
+        }
+        impl $trait<Arg> for f64 {
+            type Output = D;
+            fn $fun(self, other: Arg) -> D {
+                D(app_prim(stringify!($prim), [real(self), other.val().0]))
             }
         }
     };
@@ -92,18 +98,19 @@ impl D {
         Self(lam(1, body))
     }
 
-    pub fn build(self, f: impl FnOnce(Arg) -> Self) -> Self {
-        let level = DEPTH.fetch_add(1, Ordering::AcqRel);
-        let body = f(Arg(level + 1)).0;
-        DEPTH.fetch_sub(1, Ordering::AcqRel);
-        Self(app_prim("Build", [self.0, lam(1, body)]))
-    }
-
-    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: Self, n: Self) -> Self {
+    pub fn fun2(f: impl FnOnce(Arg, Arg) -> Self) -> Self {
         let level = DEPTH.fetch_add(2, Ordering::AcqRel);
         let body = f(Arg(level + 1), Arg(level + 2)).0;
         DEPTH.fetch_sub(2, Ordering::AcqRel);
-        Self(app_prim("IFold", [lam(2, body), init.0, n.0]))
+        Self(lam(2, body))
+    }
+
+    pub fn build(self, f: impl FnOnce(Arg) -> Self) -> Self {
+        Self(app_prim("Build", [self.0, Self::fun(f).0]))
+    }
+
+    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: Self, n: Self) -> Self {
+        Self(app_prim("IFold", [Self::fun2(f).0, init.0, n.0]))
     }
 }
 
@@ -144,6 +151,13 @@ macro_rules! common_impl {
         impl Not for $ty {
             type Output = D;
             fn_impl!(Not, not);
+        }
+
+        impl Neg for $ty {
+            type Output = D;
+            fn neg(self) -> D {
+                0. - self
+            }
         }
     };
 }

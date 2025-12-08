@@ -1,0 +1,23 @@
+(ruleset deriv)
+
+(constructor D (Expr) Expr :unextractable)
+(constructor P (Primitive) Expr :unextractable)
+
+(rewrite (D (Lam n f)) (Lam n (D f)) :ruleset deriv)
+(rewrite (D (App f xs)) (App (D f) (map (unstable-fn "D") xs)) :ruleset deriv)
+(rewrite (D (Var i)) (Var i) :ruleset deriv)
+(rewrite (D (Prim p)) (P p) :ruleset deriv)
+(rewrite (D (Int n)) ( Int n) :ruleset deriv)
+(rewrite (D (Real x)) (App (Prim (Pair)) (vec-of (Real x) (Real 0.))) :ruleset deriv)
+
+(rewrite (P (If)) (Prim (If)) :ruleset deriv)
+(rewrite (P (And)) (Prim (And)) :ruleset deriv)
+(rewrite (P (Or)) (Prim (Or)) :ruleset deriv)
+(rewrite (P (Not)) (Prim (Not)) :ruleset deriv)
+(rewrite (P (Build)) (Prim (Build)) :ruleset deriv)
+(rewrite (P (IFold)) (Prim (IFold)) :ruleset deriv)
+(rewrite (P (Get)) (Prim (Get)) :ruleset deriv)
+(rewrite (P (Length)) (Prim (Length)) :ruleset deriv)
+(rewrite (P (Pair)) (Prim (Pair)) :ruleset deriv)
+(rewrite (P (Fst)) (Prim (Fst)) :ruleset deriv)
+(rewrite (P (Snd)) (Prim (Snd)) :ruleset deriv)

@@ -1,16 +1,17 @@
 (datatype*
 	(sort ExprVec (Vec Expr))
+	(sort MapFn (UnstableFn (Expr) Expr))
 
 	(Expr
 		(Lam i64 Expr)
 		(App Expr ExprVec)
 		(Var i64)
 		(Prim Primitive)
+		(Int i64)
+		(Real f64)
 	)
 
 	(Primitive
-		(Int i64)
-		(Real f64)
 		(If)
 
 		(Add)
