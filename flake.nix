@@ -21,6 +21,7 @@
                 rust-analyzer
                 clippy
                 rustfmt
+                graphviz
               ];
               shellHook = ''
                 nu --execute '

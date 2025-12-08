@@ -1,10 +1,12 @@
-use egglog::ast::Expr;
+use egglog::{EGraph, SerializeConfig, ast::Expr};
 use std::{
+    error::Error,
     ops::{Add, BitAnd, BitOr, Div, Mul, Not, Sub},
+    path::Path,
     sync::atomic::{AtomicU32, Ordering},
 };
 
-use crate::f_smooth::{app_prim, lam, real, var};
+use crate::f_smooth::{add_to_egraph, app_prim, lam, real, var};
 
 #[derive(Debug, Clone)]
 pub struct D(Expr);
@@ -116,4 +118,36 @@ op_impl!(Or, BitOr, bitor);
 impl Not for D {
     type Output = Self;
     fn_impl!(Not, not);
+}
+
+impl D {
+    pub fn to_json_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+        let mut eg = EGraph::default();
+        add_to_egraph(&mut eg)?;
+        eg.eval_expr(&self.0)?;
+        eg.serialize(SerializeConfig::default())
+            .egraph
+            .to_json_file(path)?;
+        Ok(())
+    }
+
+    pub fn to_dot_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+        let mut eg = EGraph::default();
+        add_to_egraph(&mut eg)?;
+        eg.eval_expr(&self.0)?;
+        eg.serialize(SerializeConfig::default())
+            .egraph
+            .to_dot_file(path)?;
+        Ok(())
+    }
+
+    pub fn to_svg_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
+        let mut eg = EGraph::default();
+        add_to_egraph(&mut eg)?;
+        eg.eval_expr(&self.0)?;
+        eg.serialize(SerializeConfig::default())
+            .egraph
+            .to_svg_file(path)?;
+        Ok(())
+    }
 }
