@@ -1,0 +1,44 @@
+(datatype*
+	(sort ExprVec (Vec Expr))
+
+	(Expr
+		(Lam i64 Expr)
+		(App Expr ExprVec)
+		(Var i64)
+		(Prim Primitive)
+	)
+
+	(Primitive
+		(Int i64)
+		(Real f64)
+		(If)
+
+		(Add)
+		(Sub)
+		(Mul)
+		(Div)
+		(Pow)
+
+		(Exp)
+		(Log)
+		(Sin)
+		(Cos)
+
+		(LT)
+		(GT)
+		(EQ)
+
+		(And)
+		(Or)
+		(Not)
+
+		(Build)
+		(IFold)
+		(Get)
+		(Length)
+
+		(Pair)
+		(Fst)
+		(Snd)
+	)
+)

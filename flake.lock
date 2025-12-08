@@ -1,21 +1,5 @@
 {
   "nodes": {
-    "egglog-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1764634677,
-        "narHash": "sha256-XLmaytZCiVbShpktSeHgD/zCRVWhjfiMOhL2/P6kFbM=",
-        "owner": "egraphs-good",
-        "repo": "egglog",
-        "rev": "33f79948ca25ec170b585515fb47809368ad2897",
-        "type": "github"
-      },
-      "original": {
-        "owner": "egraphs-good",
-        "repo": "egglog",
-        "type": "github"
-      }
-    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -51,7 +35,6 @@
     },
     "root": {
       "inputs": {
-        "egglog-src": "egglog-src",
         "flake-parts": "flake-parts",
         "nixpkgs": "nixpkgs"
       }
