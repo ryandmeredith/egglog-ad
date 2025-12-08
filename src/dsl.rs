@@ -11,18 +11,39 @@ use crate::f_smooth::{add_to_egraph, app_prim, lam, real, var};
 #[derive(Debug, Clone)]
 pub struct D(Expr);
 
+static DEPTH: AtomicU32 = AtomicU32::new(0);
+
+#[derive(Debug, Clone, Copy)]
+pub struct Arg(u32);
+
+pub trait DLike {
+    fn val(self) -> D;
+}
+
+impl DLike for D {
+    fn val(self) -> D {
+        self
+    }
+}
+
+impl DLike for Arg {
+    fn val(self) -> D {
+        D(var(DEPTH.load(Ordering::Acquire) - self.0))
+    }
+}
+
 macro_rules! fn_impl {
     ($prim:ident, $fun:ident $(, $vis:vis)?) => {
-        $($vis)? fn $fun(self) -> Self {
-            Self(app_prim(stringify!($prim), [self.0]))
+        $($vis)? fn $fun(self) -> D {
+            D(app_prim(stringify!($prim), [self.val().0]))
         }
     };
 }
 
 macro_rules! bin_impl {
     ($prim:ident, $fun:ident $(, $vis:vis)?) => {
-        $($vis)? fn $fun(self, other: Self) -> Self {
-            Self(app_prim(stringify!($prim), [self.0, other.0]))
+        $($vis)? fn $fun(self, other: impl DLike) -> D {
+            D(app_prim(stringify!($prim), [self.val().0, other.val().0]))
         }
     };
 }
@@ -31,23 +52,32 @@ macro_rules! op_impl {
     ($prim:ident, $trait:ident, $fun:ident) => {
         impl $trait for D {
             type Output = Self;
-            bin_impl!($prim, $fun);
+            fn $fun(self, other: Self) -> Self {
+                Self(app_prim(stringify!($prim), [self.0, other.0]))
+            }
+        }
+        impl $trait<Arg> for D {
+            type Output = Self;
+            fn $fun(self, other: Arg) -> Self {
+                Self(app_prim(stringify!($prim), [self.0, other.val().0]))
+            }
+        }
+        impl $trait for Arg {
+            type Output = D;
+            fn $fun(self, other: Self) -> D {
+                D(app_prim(stringify!($prim), [self.val().0, other.val().0]))
+            }
+        }
+        impl $trait<D> for Arg {
+            type Output = D;
+            fn $fun(self, other: D) -> D {
+                D(app_prim(stringify!($prim), [self.val().0, other.0]))
+            }
         }
     };
     ($trait:ident, $fun:ident) => {
         op_impl!($trait, $trait, $fun);
     };
-}
-
-static DEPTH: AtomicU32 = AtomicU32::new(0);
-
-#[derive(Debug, Clone, Copy)]
-pub struct Arg(u32);
-
-impl Arg {
-    pub fn val(self) -> D {
-        D(var(DEPTH.load(Ordering::Acquire) - self.0))
-    }
 }
 
 impl D {
@@ -97,6 +127,38 @@ impl D {
         let body = f(Arg(level + 1), Arg(level + 2)).0;
         DEPTH.fetch_sub(2, Ordering::AcqRel);
         Self(app_prim("IFold", [lam(2, body), init.0, n.0]))
+    }
+
+    bin_impl!(Get, get, pub);
+    fn_impl!(Length, length, pub);
+
+    bin_impl!(Pair, pair, pub);
+    fn_impl!(Fst, fst, pub);
+    fn_impl!(Snd, snd, pub);
+}
+
+impl Arg {
+    bin_impl!(Pow, pow, pub);
+
+    fn_impl!(Exp, exp, pub);
+    fn_impl!(Log, log, pub);
+    fn_impl!(Sin, sin, pub);
+    fn_impl!(Cos, cos, pub);
+
+    bin_impl!(LT, lt, pub);
+    bin_impl!(GT, gt, pub);
+    bin_impl!(EQ, eq, pub);
+
+    pub fn le(self, other: impl DLike) -> D {
+        !self.gt(other)
+    }
+
+    pub fn ge(self, other: impl DLike) -> D {
+        !self.lt(other)
+    }
+
+    pub fn ne(self, other: impl DLike) -> D {
+        !self.eq(other)
     }
 
     bin_impl!(Get, get, pub);
