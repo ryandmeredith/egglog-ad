@@ -17,12 +17,14 @@
           {
             devShells.default = pkgs.mkShell {
               packages = with pkgs; [
+                rustc
                 cargo
                 rust-analyzer
                 clippy
                 rustfmt
                 graphviz
               ];
+              RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
               shellHook = ''
                 nu --execute '
                   def gather [] {

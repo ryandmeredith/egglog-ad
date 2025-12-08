@@ -9,7 +9,7 @@ use std::{
 use crate::f_smooth::{add_to_egraph, app_prim, lam, real, var};
 
 #[derive(Debug, Clone)]
-pub struct D(Expr);
+pub struct D(pub(crate) Expr);
 
 static DEPTH: AtomicU32 = AtomicU32::new(0);
 
@@ -92,29 +92,6 @@ impl D {
         Self(lam(1, body))
     }
 
-    bin_impl!(Pow, pow, pub);
-
-    fn_impl!(Exp, exp, pub);
-    fn_impl!(Log, log, pub);
-    fn_impl!(Sin, sin, pub);
-    fn_impl!(Cos, cos, pub);
-
-    bin_impl!(LT, lt, pub);
-    bin_impl!(GT, gt, pub);
-    bin_impl!(EQ, eq, pub);
-
-    pub fn le(self, other: Self) -> Self {
-        !self.gt(other)
-    }
-
-    pub fn ge(self, other: Self) -> Self {
-        !self.lt(other)
-    }
-
-    pub fn ne(self, other: Self) -> Self {
-        !self.eq(other)
-    }
-
     pub fn build(self, f: impl FnOnce(Arg) -> Self) -> Self {
         let level = DEPTH.fetch_add(1, Ordering::AcqRel);
         let body = f(Arg(level + 1)).0;
@@ -128,46 +105,51 @@ impl D {
         DEPTH.fetch_sub(2, Ordering::AcqRel);
         Self(app_prim("IFold", [lam(2, body), init.0, n.0]))
     }
-
-    bin_impl!(Get, get, pub);
-    fn_impl!(Length, length, pub);
-
-    bin_impl!(Pair, pair, pub);
-    fn_impl!(Fst, fst, pub);
-    fn_impl!(Snd, snd, pub);
 }
 
-impl Arg {
-    bin_impl!(Pow, pow, pub);
+macro_rules! common_impl {
+    ($ty:ident) => {
+        impl $ty {
+            bin_impl!(Pow, pow, pub);
 
-    fn_impl!(Exp, exp, pub);
-    fn_impl!(Log, log, pub);
-    fn_impl!(Sin, sin, pub);
-    fn_impl!(Cos, cos, pub);
+            fn_impl!(Exp, exp, pub);
+            fn_impl!(Log, log, pub);
+            fn_impl!(Sin, sin, pub);
+            fn_impl!(Cos, cos, pub);
 
-    bin_impl!(LT, lt, pub);
-    bin_impl!(GT, gt, pub);
-    bin_impl!(EQ, eq, pub);
+            bin_impl!(LT, lt, pub);
+            bin_impl!(GT, gt, pub);
+            bin_impl!(EQ, eq, pub);
 
-    pub fn le(self, other: impl DLike) -> D {
-        !self.gt(other)
-    }
+            pub fn le(self, other: impl DLike) -> D {
+                !self.gt(other)
+            }
 
-    pub fn ge(self, other: impl DLike) -> D {
-        !self.lt(other)
-    }
+            pub fn ge(self, other: impl DLike) -> D {
+                !self.lt(other)
+            }
 
-    pub fn ne(self, other: impl DLike) -> D {
-        !self.eq(other)
-    }
+            pub fn ne(self, other: impl DLike) -> D {
+                !self.eq(other)
+            }
 
-    bin_impl!(Get, get, pub);
-    fn_impl!(Length, length, pub);
+            bin_impl!(Get, get, pub);
+            fn_impl!(Length, length, pub);
 
-    bin_impl!(Pair, pair, pub);
-    fn_impl!(Fst, fst, pub);
-    fn_impl!(Snd, snd, pub);
+            bin_impl!(Pair, pair, pub);
+            fn_impl!(Fst, fst, pub);
+            fn_impl!(Snd, snd, pub);
+        }
+
+        impl Not for $ty {
+            type Output = D;
+            fn_impl!(Not, not);
+        }
+    };
 }
+
+common_impl!(D);
+common_impl!(Arg);
 
 op_impl!(Add, add);
 op_impl!(Sub, sub);
@@ -176,11 +158,6 @@ op_impl!(Div, div);
 
 op_impl!(And, BitAnd, bitand);
 op_impl!(Or, BitOr, bitor);
-
-impl Not for D {
-    type Output = Self;
-    fn_impl!(Not, not);
-}
 
 impl D {
     pub fn to_json_file(&self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error>> {
