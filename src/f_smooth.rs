@@ -5,7 +5,7 @@ use egglog::{
     prelude::exprs::{float, int},
 };
 
-fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
+pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
     eg.parse_and_run_program(Some("f-smooth.egg".into()), include_str!("f-smooth.egg"))?;
     Ok(())
 }
@@ -18,8 +18,8 @@ pub fn app(fun: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
     call!("App", [fun, call!("vec-of", args)])
 }
 
-pub fn var(n: i64) -> Expr {
-    call!("Var", [int(n)])
+pub fn var(n: u32) -> Expr {
+    call!("Var", [int(n.into())])
 }
 
 pub fn app_prim(op: &str, args: impl IntoIterator<Item = Expr>) -> Expr {

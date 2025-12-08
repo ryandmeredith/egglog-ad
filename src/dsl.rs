@@ -1,7 +1,10 @@
 use egglog::ast::Expr;
-use std::ops::{Add, BitAnd, BitOr, Div, Mul, Not, Sub};
+use std::{
+    ops::{Add, BitAnd, BitOr, Div, Mul, Not, Sub},
+    sync::atomic::{AtomicU32, Ordering},
+};
 
-use crate::f_smooth::{app_prim, lam, shift, var};
+use crate::f_smooth::{app_prim, lam, real, var};
 
 #[derive(Debug, Clone)]
 pub struct D(Expr);
@@ -34,7 +37,29 @@ macro_rules! op_impl {
     };
 }
 
+static DEPTH: AtomicU32 = AtomicU32::new(0);
+
+#[derive(Debug, Clone, Copy)]
+pub struct Arg(u32);
+
+impl Arg {
+    pub fn val(self) -> D {
+        D(var(DEPTH.load(Ordering::Acquire) - self.0))
+    }
+}
+
 impl D {
+    pub fn constant(x: f64) -> Self {
+        Self(real(x))
+    }
+
+    pub fn fun(f: impl FnOnce(Arg) -> Self) -> Self {
+        let level = DEPTH.fetch_add(1, Ordering::AcqRel);
+        let body = f(Arg(level + 1)).0;
+        DEPTH.fetch_sub(1, Ordering::AcqRel);
+        Self(lam(1, body))
+    }
+
     bin_impl!(Pow, pow, pub);
 
     fn_impl!(Exp, exp, pub);
@@ -58,15 +83,17 @@ impl D {
         !self.eq(other)
     }
 
-    pub fn build(self, f: impl FnOnce(Self) -> Self) -> Self {
-        let mut body = f(Self(var(-1))).0;
-        shift(0, 1, &mut body);
+    pub fn build(self, f: impl FnOnce(Arg) -> Self) -> Self {
+        let level = DEPTH.fetch_add(1, Ordering::AcqRel);
+        let body = f(Arg(level + 1)).0;
+        DEPTH.fetch_sub(1, Ordering::AcqRel);
         Self(app_prim("Build", [self.0, lam(1, body)]))
     }
 
-    pub fn ifold(f: impl FnOnce(Self, Self) -> Self, init: Self, n: Self) -> Self {
-        let mut body = f(Self(var(-2)), Self(var(-1))).0;
-        shift(0, 2, &mut body);
+    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: Self, n: Self) -> Self {
+        let level = DEPTH.fetch_add(2, Ordering::AcqRel);
+        let body = f(Arg(level + 1), Arg(level + 2)).0;
+        DEPTH.fetch_sub(2, Ordering::AcqRel);
         Self(app_prim("IFold", [lam(2, body), init.0, n.0]))
     }
 
