@@ -22,6 +22,7 @@
                 clippy
                 rustfmt
                 graphviz
+                xdot
               ];
               shellHook = ''
                 nu --execute '

@@ -18,6 +18,6 @@
 (rewrite (Subst n e (Int i)) (Int i) :ruleset optim)
 (rewrite (Subst n e (Real x)) (Real x) :ruleset optim)
 
-(rewrite (App (Lam n f) xs) (App (Lam (- n 1) (Shift 0 1 (Subst 0 (Shift 0 -1 (vec-get xs 0)) f))) (vec-remove xs 0)) :when ((!= n 0) (!= (vec-length xs) 0)) :ruleset optim)
-(rewrite (App f xs) f :when ((= (vec-length xs) 0)) :ruleset optim)
-(rewrite (Lam 0 f) f :ruleset optim)
+(rewrite (App (Lam n f) xs) (App (Lam (- n 1) (Shift 0 1 (Subst 0 (Shift 0 -1 (vec-get xs 0)) f))) (vec-remove xs 0)) :when ((!= n 0) (!= (vec-length xs) 0)) :subsume :ruleset optim)
+(rewrite (App f xs) f :when ((= (vec-length xs) 0)) :subsume :ruleset optim)
+(rewrite (Lam 0 f) f :subsume :ruleset optim)
