@@ -17,29 +17,12 @@
           {
             devShells.default = pkgs.mkShell {
               packages = with pkgs; [
-                rustc
                 cargo
                 rust-analyzer
                 clippy
                 rustfmt
                 graphviz
               ];
-              RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-              shellHook = ''
-                nu --execute '
-                  def gather [] {
-                    parse --regex `Rule (?<rule>.*): search and apply \d+(?:\.\d+)?s, num matches (?<matches>\d+)`
-                    | update matches { into int }
-                    | sort-by matches
-                  }
-                  def new_rules [old: table] {
-                    join $old rule
-                    | where matches > $it.matches_
-                    | get rule
-                  }
-                '
-                exit
-              '';
             };
           };
       }
