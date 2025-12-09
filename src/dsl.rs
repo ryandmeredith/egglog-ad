@@ -105,18 +105,21 @@ impl D {
         Self(lam(2, body))
     }
 
-    pub fn build(self, f: impl FnOnce(Arg) -> Self) -> Self {
-        Self(app_prim("Build", [self.0, Self::fun(f).0]))
-    }
-
-    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: Self, n: Self) -> Self {
-        Self(app_prim("IFold", [Self::fun2(f).0, init.0, n.0]))
+    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: impl DLike, n: impl DLike) -> Self {
+        Self(app_prim(
+            "IFold",
+            [Self::fun2(f).0, init.val().0, n.val().0],
+        ))
     }
 }
 
 macro_rules! common_impl {
     ($ty:ident) => {
         impl $ty {
+            pub fn if_then_else(self, t: impl DLike, f: impl DLike) -> D {
+                D(app_prim("If", [self.val().0, t.val().0, f.val().0]))
+            }
+
             bin_impl!(Pow, pow, pub);
 
             fn_impl!(Exp, exp, pub);
@@ -140,12 +143,35 @@ macro_rules! common_impl {
                 !self.eq(other)
             }
 
+            pub fn build(self, f: impl FnOnce(Arg) -> D) -> D {
+                D(app_prim("Build", [self.val().0, D::fun(f).0]))
+            }
+
             bin_impl!(Get, get, pub);
             fn_impl!(Length, length, pub);
 
             bin_impl!(Pair, pair, pub);
             fn_impl!(Fst, fst, pub);
             fn_impl!(Snd, snd, pub);
+
+            pub fn vector_zip(self, other: impl DLike) -> D {
+                let len = self.clone().length();
+                len.build(|i| self.get(i).pair(other.val().get(i)))
+            }
+
+            pub fn one_hot(self, i: impl DLike) -> D {
+                self.build(|j| j.eq(i).if_then_else(1., 0.))
+            }
+
+            pub fn sum(self) -> D {
+                let len = self.clone().length();
+                D::ifold(|a, i| a + self.get(i), 0., len)
+            }
+
+            pub fn prod(self) -> D {
+                let len = self.clone().length();
+                D::ifold(|a, i| a + self.get(i), 0., len)
+            }
         }
 
         impl Not for $ty {

@@ -1,13 +1,17 @@
 use egglog::{
     EGraph, Error, RunReport,
-    ast::{Command, Rewrite, RustSpan, Span},
+    ast::{Command, Expr, Rewrite, RustSpan, Span},
     call, span,
 };
 
 use crate::{
     dsl::{Arg, D},
-    f_smooth,
+    f_smooth::{self, app},
 };
+
+pub fn d(expr: Expr) -> Expr {
+    call!("D", [expr])
+}
 
 fn case(op: &str, deriv: D) -> Command {
     let rewrite = Rewrite {
@@ -74,7 +78,28 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
 }
 
 pub fn diff(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
-    let expr = call!("D", [D::fun(f).0]);
+    let expr = D::fun(|x| D(app(d(D::fun(f).0), [x.pair(1.).0]))).0;
+    let mut eg = EGraph::default();
+    add_to_egraph(&mut eg)?;
+    let (sort, val) = eg.eval_expr(&expr)?;
+
+    let mut report = RunReport::default();
+    report.updated = true;
+    while report.updated {
+        report = eg.step_rules("deriv")?;
+    }
+
+    let (dag, term, _) = eg.extract_value(&sort, val)?;
+    Ok(D(dag.term_to_expr(&term, span!())))
+}
+
+pub fn grad(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
+    let expr = D::fun(|v| {
+        D::build(v.length(), |i| {
+            D(app(d(D::fun(f).0), [v.vector_zip(v.length().one_hot(i)).0]))
+        })
+    })
+    .0;
     let mut eg = EGraph::default();
     add_to_egraph(&mut eg)?;
     let (sort, val) = eg.eval_expr(&expr)?;
