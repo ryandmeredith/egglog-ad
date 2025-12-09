@@ -1,0 +1,23 @@
+(ruleset optim)
+
+(constructor Shift (i64 i64 Expr) Expr :unextractable)
+(rewrite (Shift c d (Lam n f)) (Lam n (Shift (+ c n) d f)) :ruleset optim)
+(rewrite (Shift c d (App f xs)) (App (Shift c d f) (map (unstable-fn "Shift" c d) xs)) :ruleset optim)
+(rewrite (Shift c d (Var n)) (Var n) :when ((< n c)) :ruleset optim)
+(rewrite (Shift c d (Var n)) (Var (+ n d)) :when ((>= n c)) :ruleset optim)
+(rewrite (Shift c d (Prim p)) (Prim p) :ruleset optim)
+(rewrite (Shift c d (Int i)) (Int i) :ruleset optim)
+(rewrite (Shift c d (Real x)) (Real x) :ruleset optim)
+
+(constructor Subst (i64 Expr Expr) Expr :unextractable)
+(rewrite (Subst n e (Lam m f)) (Lam m (Subst (+ n m) (Shift 0 m e) f)) :ruleset optim)
+(rewrite (Subst n e (App f xs)) (App (Subst n e f) (map (unstable-fn "Subst" n e) xs)) :ruleset optim)
+(rewrite (Subst n e (Var n)) e :ruleset optim)
+(rewrite (Subst n e (Var m)) (Var m) :when ((!= n m)) :ruleset optim)
+(rewrite (Subst n e (Prim p)) (Prim p) :ruleset optim)
+(rewrite (Subst n e (Int i)) (Int i) :ruleset optim)
+(rewrite (Subst n e (Real x)) (Real x) :ruleset optim)
+
+(rewrite (App (Lam n f) xs) (App (Lam (- n 1) (Shift 0 1 (Subst 0 (Shift 0 -1 (vec-get xs 0)) f))) (vec-remove xs 0)) :when ((!= n 0) (!= (vec-length xs) 0)) :ruleset optim)
+(rewrite (App f xs) f :when ((= (vec-length xs) 0)) :ruleset optim)
+(rewrite (Lam 0 f) f :ruleset optim)

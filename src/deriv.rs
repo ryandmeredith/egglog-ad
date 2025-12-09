@@ -24,7 +24,6 @@ fn case(op: &str, deriv: D) -> Command {
 }
 
 pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
-    f_smooth::add_to_egraph(eg)?;
     eg.parse_and_run_program(Some("deriv.egg".into()), include_str!("deriv.egg"))?;
     eg.run_program(vec![
         case(
@@ -80,6 +79,7 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
 pub fn diff(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
     let expr = D::fun(|x| D(app(d(D::fun(f).0), [x.pair(1.).0]))).0;
     let mut eg = EGraph::default();
+    f_smooth::add_to_egraph(&mut eg)?;
     add_to_egraph(&mut eg)?;
     let (sort, val) = eg.eval_expr(&expr)?;
 
@@ -101,6 +101,7 @@ pub fn grad(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
     })
     .0;
     let mut eg = EGraph::default();
+    f_smooth::add_to_egraph(&mut eg)?;
     add_to_egraph(&mut eg)?;
     let (sort, val) = eg.eval_expr(&expr)?;
 
