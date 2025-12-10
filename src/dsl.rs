@@ -3,18 +3,12 @@ use std::{
     error::Error,
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
     path::Path,
-    sync::atomic::{AtomicU32, Ordering},
 };
 
-use crate::f_smooth::{add_to_egraph, app_prim, lam, real, var};
+use crate::f_smooth::{add_to_egraph, app, app_prim, inte, lam, real, shift, var};
 
 #[derive(Debug, Clone)]
 pub struct D(pub(crate) Expr);
-
-static DEPTH: AtomicU32 = AtomicU32::new(0);
-
-#[derive(Debug, Clone, Copy)]
-pub struct Arg(u32);
 
 pub trait DLike {
     fn val(self) -> D;
@@ -26,30 +20,29 @@ impl DLike for D {
     }
 }
 
-impl DLike for Arg {
+impl DLike for &D {
     fn val(self) -> D {
-        D(var(DEPTH.load(Ordering::Acquire) - self.0))
+        self.clone()
     }
 }
-
 impl DLike for f64 {
     fn val(self) -> D {
-        D::constant(self)
+        D::real(self)
     }
 }
 
 macro_rules! fn_impl {
     ($prim:ident, $fun:ident $(, $vis:vis)?) => {
-        $($vis)? fn $fun(self) -> D {
-            D(app_prim(stringify!($prim), [self.val().0]))
+        $($vis)? fn $fun(&self) -> D {
+            D(app_prim(stringify!($prim), [self.clone().0]))
         }
     };
 }
 
 macro_rules! bin_impl {
     ($prim:ident, $fun:ident $(, $vis:vis)?) => {
-        $($vis)? fn $fun(self, other: impl DLike) -> D {
-            D(app_prim(stringify!($prim), [self.val().0, other.val().0]))
+        $($vis)? fn $fun(&self, other: impl DLike) -> D {
+            D(app_prim(stringify!($prim), [self.clone().0, other.val().0]))
         }
     };
 }
@@ -62,10 +55,10 @@ macro_rules! op_impl {
                 Self(app_prim(stringify!($prim), [self.0, other.val().0]))
             }
         }
-        impl<T: DLike> $trait<T> for Arg {
+        impl<T: DLike> $trait<T> for &D {
             type Output = D;
             fn $fun(self, other: T) -> D {
-                D(app_prim(stringify!($prim), [self.val().0, other.val().0]))
+                D(app_prim(stringify!($prim), [self.clone().0, other.val().0]))
             }
         }
         impl $trait<D> for f64 {
@@ -74,10 +67,10 @@ macro_rules! op_impl {
                 D(app_prim(stringify!($prim), [real(self), other.0]))
             }
         }
-        impl $trait<Arg> for f64 {
+        impl $trait<&D> for f64 {
             type Output = D;
-            fn $fun(self, other: Arg) -> D {
-                D(app_prim(stringify!($prim), [real(self), other.val().0]))
+            fn $fun(self, other: &D) -> D {
+                D(app_prim(stringify!($prim), [real(self), other.clone().0]))
             }
         }
     };
@@ -87,109 +80,121 @@ macro_rules! op_impl {
 }
 
 impl D {
-    pub fn constant(x: f64) -> Self {
+    pub fn var(n: u32) -> Self {
+        Self(var(n))
+    }
+
+    pub fn lam(nargs: u32, body: impl DLike) -> Self {
+        Self(lam(nargs, body.val().0))
+    }
+
+    pub fn app(&self, args: impl IntoIterator<Item = impl DLike>) -> Self {
+        Self(app(self.clone().0, args.into_iter().map(|x| x.val().0)))
+    }
+
+    pub fn int(i: i64) -> Self {
+        Self(inte(i))
+    }
+
+    pub fn real(x: f64) -> Self {
         Self(real(x))
     }
 
-    pub fn fun(f: impl FnOnce(Arg) -> Self) -> Self {
-        let level = DEPTH.fetch_add(1, Ordering::AcqRel);
-        let body = f(Arg(level + 1)).0;
-        DEPTH.fetch_sub(1, Ordering::AcqRel);
-        Self(lam(1, body))
+    pub fn lift(&self, n: u32) -> Self {
+        let mut copy = self.clone();
+        shift(0, n.into(), &mut copy.0);
+        copy
     }
 
-    pub fn fun2(f: impl FnOnce(Arg, Arg) -> Self) -> Self {
-        let level = DEPTH.fetch_add(2, Ordering::AcqRel);
-        let body = f(Arg(level + 1), Arg(level + 2)).0;
-        DEPTH.fetch_sub(2, Ordering::AcqRel);
-        Self(lam(2, body))
+    pub fn if_then_else(&self, t: impl DLike, f: impl DLike) -> Self {
+        Self(app_prim("If", [self.clone().0, t.val().0, f.val().0]))
     }
 
-    pub fn ifold(f: impl FnOnce(Arg, Arg) -> Self, init: impl DLike, n: impl DLike) -> Self {
-        Self(app_prim(
-            "IFold",
-            [Self::fun2(f).0, init.val().0, n.val().0],
+    bin_impl!(Pow, pow, pub);
+
+    fn_impl!(Exp, exp, pub);
+    fn_impl!(Log, log, pub);
+    fn_impl!(Sin, sin, pub);
+    fn_impl!(Cos, cos, pub);
+
+    bin_impl!(LT, lt, pub);
+    bin_impl!(GT, gt, pub);
+    bin_impl!(EQ, eq, pub);
+
+    pub fn le(self, other: impl DLike) -> D {
+        !self.gt(other)
+    }
+
+    pub fn ge(self, other: impl DLike) -> D {
+        !self.lt(other)
+    }
+
+    pub fn ne(self, other: impl DLike) -> D {
+        !self.eq(other)
+    }
+
+    bin_impl!(Build, build, pub);
+    pub fn ifold(&self, init: impl DLike, n: impl DLike) -> Self {
+        Self(app_prim("IFold", [self.clone().0, init.val().0, n.val().0]))
+    }
+    bin_impl!(Get, get, pub);
+    fn_impl!(Length, length, pub);
+
+    bin_impl!(Pair, pair, pub);
+    fn_impl!(Fst, fst, pub);
+    fn_impl!(Snd, snd, pub);
+
+    pub fn vector_zip(&self, other: impl DLike) -> Self {
+        let i = &Self::var(0);
+        self.length().build(Self::lam(
+            1,
+            self.lift(1).get(i).pair(other.val().lift(1).get(i)),
         ))
     }
+
+    pub fn one_hot(&self, i: impl DLike) -> Self {
+        self.build(Self::lam(
+            1,
+            i.val().lift(1).eq(Self::var(0)).if_then_else(1., 0.),
+        ))
+    }
+
+    pub fn sum(&self) -> Self {
+        Self::lam(2, Self::var(1) + self.lift(2).get(Self::var(0))).ifold(0., self.length())
+    }
+
+    pub fn prod(&self) -> Self {
+        Self::lam(2, Self::var(1) * self.lift(2).get(Self::var(0))).ifold(1., self.length())
+    }
 }
 
-macro_rules! common_impl {
-    ($ty:ident) => {
-        impl $ty {
-            pub fn if_then_else(self, t: impl DLike, f: impl DLike) -> D {
-                D(app_prim("If", [self.val().0, t.val().0, f.val().0]))
-            }
-
-            bin_impl!(Pow, pow, pub);
-
-            fn_impl!(Exp, exp, pub);
-            fn_impl!(Log, log, pub);
-            fn_impl!(Sin, sin, pub);
-            fn_impl!(Cos, cos, pub);
-
-            bin_impl!(LT, lt, pub);
-            bin_impl!(GT, gt, pub);
-            bin_impl!(EQ, eq, pub);
-
-            pub fn le(self, other: impl DLike) -> D {
-                !self.gt(other)
-            }
-
-            pub fn ge(self, other: impl DLike) -> D {
-                !self.lt(other)
-            }
-
-            pub fn ne(self, other: impl DLike) -> D {
-                !self.eq(other)
-            }
-
-            pub fn build(self, f: impl FnOnce(Arg) -> D) -> D {
-                D(app_prim("Build", [self.val().0, D::fun(f).0]))
-            }
-
-            bin_impl!(Get, get, pub);
-            fn_impl!(Length, length, pub);
-
-            bin_impl!(Pair, pair, pub);
-            fn_impl!(Fst, fst, pub);
-            fn_impl!(Snd, snd, pub);
-
-            pub fn vector_zip(self, other: impl DLike) -> D {
-                let len = self.clone().length();
-                len.build(|i| self.get(i).pair(other.val().get(i)))
-            }
-
-            pub fn one_hot(self, i: impl DLike) -> D {
-                self.build(|j| j.eq(i).if_then_else(1., 0.))
-            }
-
-            pub fn sum(self) -> D {
-                let len = self.clone().length();
-                D::ifold(|a, i| a + self.get(i), 0., len)
-            }
-
-            pub fn prod(self) -> D {
-                let len = self.clone().length();
-                D::ifold(|a, i| a + self.get(i), 0., len)
-            }
-        }
-
-        impl Not for $ty {
-            type Output = D;
-            fn_impl!(Not, not);
-        }
-
-        impl Neg for $ty {
-            type Output = D;
-            fn neg(self) -> D {
-                0. - self
-            }
-        }
-    };
+impl Not for D {
+    type Output = Self;
+    fn not(self) -> Self {
+        Self(app_prim("Not", [self.0]))
+    }
 }
 
-common_impl!(D);
-common_impl!(Arg);
+impl Not for &D {
+    type Output = D;
+    fn not(self) -> D {
+        D(app_prim("Not", [self.val().0]))
+    }
+}
+
+impl Neg for D {
+    type Output = Self;
+    fn neg(self) -> Self {
+        0. - self
+    }
+}
+
+impl Neg for &D {
+    type Output = D;
+    fn neg(self) -> D {
+        0. - self
+    }
+}
 
 op_impl!(Add, add);
 op_impl!(Sub, sub);
@@ -214,9 +219,9 @@ impl D {
         let mut eg = EGraph::default();
         add_to_egraph(&mut eg)?;
         eg.eval_expr(&self.0)?;
-        eg.serialize(SerializeConfig::default())
-            .egraph
-            .to_dot_file(path)?;
+        let mut e = eg.serialize(SerializeConfig::default()).egraph;
+        e.inline_leaves();
+        e.to_dot_file(path)?;
         Ok(())
     }
 
@@ -224,9 +229,9 @@ impl D {
         let mut eg = EGraph::default();
         add_to_egraph(&mut eg)?;
         eg.eval_expr(&self.0)?;
-        eg.serialize(SerializeConfig::default())
-            .egraph
-            .to_svg_file(path)?;
+        let mut e = eg.serialize(SerializeConfig::default()).egraph;
+        e.inline_leaves();
+        e.to_dot_file(path)?;
         Ok(())
     }
 }

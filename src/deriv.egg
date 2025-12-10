@@ -3,12 +3,12 @@
 (constructor D (Expr) Expr :unextractable)
 (constructor P (Primitive) Expr :unextractable)
 
-(rewrite (D (Lam n f)) (Lam n (D f)) :ruleset deriv)
-(rewrite (D (App f xs)) (App (D f) (map (unstable-fn "D") xs)) :ruleset deriv)
+(rewrite (D (Lam f)) (Lam (D f)) :ruleset deriv)
+(rewrite (D (App f x)) (App (D f) (D x)) :ruleset deriv)
 (rewrite (D (Var i)) (Var i) :ruleset deriv)
 (rewrite (D (Prim p)) (P p) :ruleset deriv)
-(rewrite (D (Int n)) ( Int n) :ruleset deriv)
-(rewrite (D (Real x)) (App (Prim (Pair)) (vec-of (Real x) (Real 0.))) :ruleset deriv)
+(rewrite (D (Int n)) (Int n) :ruleset deriv)
+(rewrite (D (Real x)) (App (App (Prim (Pair)) (Real x)) (Real 0.)) :ruleset deriv)
 
 (rewrite (P (If)) (Prim (If)) :ruleset deriv)
 (rewrite (P (And)) (Prim (And)) :ruleset deriv)

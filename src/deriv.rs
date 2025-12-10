@@ -5,8 +5,8 @@ use egglog::{
 };
 
 use crate::{
-    dsl::{Arg, D},
-    f_smooth::{self, app},
+    dsl::{D, DLike},
+    f_smooth,
 };
 
 pub fn d(expr: Expr) -> Expr {
@@ -25,59 +25,63 @@ fn case(op: &str, deriv: D) -> Command {
 
 pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
     eg.parse_and_run_program(Some("deriv.egg".into()), include_str!("deriv.egg"))?;
+    let x = D::var(1);
+    let y = D::var(0);
     eg.run_program(vec![
         case(
             "Add",
-            D::fun2(|x, y| D::pair(x.fst() + y.fst(), x.snd() + y.snd())),
+            D::lam(2, (x.fst() + y.fst()).pair(x.snd() + y.snd())),
         ),
         case(
             "Sub",
-            D::fun2(|x, y| D::pair(x.fst() - y.fst(), x.snd() - y.snd())),
+            D::lam(2, (x.fst() - y.fst()).pair(x.snd() - y.snd())),
         ),
         case(
             "Mul",
-            D::fun2(|x, y| D::pair(x.fst() * y.fst(), x.snd() * y.fst() + x.fst() * y.snd())),
+            D::lam(
+                2,
+                (x.fst() * y.fst()).pair(x.snd() * y.fst() + x.fst() * y.snd()),
+            ),
         ),
         case(
             "Div",
-            D::fun2(|x, y| {
-                D::pair(
-                    x.fst() / y.fst(),
-                    (x.snd() * y.fst() - x.fst() * y.snd()) / y.pow(2.),
-                )
-            }),
+            D::lam(
+                2,
+                (x.fst() / y.fst()).pair((x.snd() * y.fst() - x.fst() * y.snd()) / y.pow(2.)),
+            ),
         ),
         case(
             "Pow",
-            D::fun2(|x, y| {
-                D::pair(
-                    x.fst().pow(y.fst()),
+            D::lam(
+                2,
+                x.fst().pow(y.fst()).pair(
                     (y.fst() * x.snd() / x.fst() + x.fst().log() * y.snd()) * x.fst().pow(y.fst()),
-                )
-            }),
+                ),
+            ),
         ),
         case(
             "Exp",
-            D::fun(|x| D::pair(x.fst().exp(), x.snd() * x.fst().exp())),
+            D::lam(1, x.fst().exp().pair(x.snd() * x.fst().exp())),
         ),
-        case("Log", D::fun(|x| D::pair(x.fst().exp(), x.snd() / x.fst()))),
+        case("Log", D::lam(1, x.fst().log().pair(x.snd() / x.fst()))),
         case(
             "Sin",
-            D::fun(|x| D::pair(x.fst().sin(), x.snd() * x.fst().cos())),
+            D::lam(1, x.fst().sin().pair(x.snd() * x.fst().cos())),
         ),
         case(
             "Cos",
-            D::fun(|x| D::pair(x.fst().cos(), -x.snd() * x.fst().sin())),
+            D::lam(1, x.fst().cos().pair(-x.snd() * x.fst().sin())),
         ),
-        case("LT", D::fun2(|x, y| x.fst().lt(y.fst()))),
-        case("GT", D::fun2(|x, y| x.fst().gt(y.fst()))),
-        case("EQ", D::fun2(|x, y| x.fst().eq(y.fst()))),
+        case("LT", D::lam(2, x.fst().lt(y.fst()))),
+        case("GT", D::lam(2, x.fst().gt(y.fst()))),
+        case("EQ", D::lam(2, x.fst().eq(y.fst()))),
     ])?;
     Ok(())
 }
 
-pub fn diff(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
-    let expr = D::fun(|x| D(app(d(D::fun(f).0), [x.pair(1.).0]))).0;
+pub fn diff(f: impl DLike) -> Result<D, Error> {
+    let df = D(d(f.val().lift(1).0));
+    let expr = D::lam(1, df.app([D::var(0).pair(1.)])).0;
     let mut eg = EGraph::default();
     f_smooth::add_to_egraph(&mut eg)?;
     add_to_egraph(&mut eg)?;
@@ -93,12 +97,15 @@ pub fn diff(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
     Ok(D(dag.term_to_expr(&term, span!())))
 }
 
-pub fn grad(f: impl FnOnce(Arg) -> D) -> Result<D, Error> {
-    let expr = D::fun(|v| {
-        D::build(v.length(), |i| {
-            D(app(d(D::fun(f).0), [v.vector_zip(v.length().one_hot(i)).0]))
-        })
-    })
+pub fn grad(f: impl DLike) -> Result<D, Error> {
+    let df = D(d(f.val().lift(2).0));
+    let expr = D::lam(
+        1,
+        D::var(0).length().build(D::lam(
+            1,
+            df.app([D::var(1).vector_zip(D::var(1).length().one_hot(D::var(0)))]),
+        )),
+    )
     .0;
     let mut eg = EGraph::default();
     f_smooth::add_to_egraph(&mut eg)?;
