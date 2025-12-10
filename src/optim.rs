@@ -5,6 +5,7 @@ use egglog::{
 };
 
 use crate::{
+    deriv::{self, d},
     dsl::{D, DLike},
     f_smooth,
 };
@@ -72,6 +73,32 @@ pub fn optim(x: D) -> Result<D, Error> {
     report.updated = true;
     while report.updated {
         report = eg.step_rules("optim")?;
+    }
+
+    let (dag, term, _) = eg.extract_value(&sort, val)?;
+    Ok(D(dag.term_to_expr(&term, span!())))
+}
+
+pub fn grad_opt(f: impl DLike) -> Result<D, Error> {
+    let df = D(d(f.val().lift(2).0));
+    let expr = D::lam(
+        1,
+        D::var(0).length().build(D::lam(
+            1,
+            df.app([D::var(1).vector_zip(D::var(1).length().one_hot(D::var(0)))]),
+        )),
+    )
+    .0;
+    let mut eg = EGraph::default();
+    f_smooth::add_to_egraph(&mut eg)?;
+    deriv::add_to_egraph(&mut eg)?;
+    add_to_egraph(&mut eg)?;
+    let (sort, val) = eg.eval_expr(&expr)?;
+
+    let mut report = RunReport::default();
+    report.updated = true;
+    while report.updated {
+        report = eg.step_rules("both")?;
     }
 
     let (dag, term, _) = eg.extract_value(&sort, val)?;
