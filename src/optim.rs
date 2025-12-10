@@ -69,12 +69,9 @@ pub fn optim(x: D) -> Result<D, Error> {
     let (sort, val) = eg.eval_expr(&expr)?;
 
     let mut report = RunReport::default();
-    let mut updated = true;
-    while updated {
-        let r = eg.step_rules("optim")?;
-        updated = r.updated;
-        report.union(r);
-        println!("{report}");
+    report.updated = true;
+    while report.updated {
+        report = eg.step_rules("optim")?;
     }
 
     let (dag, term, _) = eg.extract_value(&sort, val)?;

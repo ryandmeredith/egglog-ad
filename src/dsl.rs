@@ -1,6 +1,7 @@
 use egglog::{EGraph, SerializeConfig, ast::Expr};
 use std::{
     error::Error,
+    fmt::{self, Display, Formatter},
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
     path::Path,
 };
@@ -9,6 +10,12 @@ use crate::f_smooth::{add_to_egraph, app, app_prim, inte, lam, real, shift, var}
 
 #[derive(Debug, Clone)]
 pub struct D(pub(crate) Expr);
+
+impl Display for D {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 pub trait DLike {
     fn val(self) -> D;
