@@ -36,7 +36,7 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
         rewrite(x + -y, x - y, false),
         rewrite(x - x, 0., false),
         rewrite(x * y + x * z, x * (y + z), false),
-        rewrite(x.build(y).get(z), y.app([z]), false),
+        rewrite(x.build(y).get(z), y.app([z]), true),
         rewrite(x.build(y).length(), x, false),
         rewrite(x.if_then_else(y, y), y, false),
         rewrite(
@@ -45,8 +45,8 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
             false,
         ),
         rewrite(D::lam(2, D::var(1)).ifold(x, y), x, false),
-        rewrite(x.pair(y).fst(), x, false),
-        rewrite(x.pair(y).snd(), y, false),
+        rewrite(x.pair(y).fst(), x, true),
+        rewrite(x.pair(y).snd(), y, true),
         rewrite(
             D::lam(
                 2,
