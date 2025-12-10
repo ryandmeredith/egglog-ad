@@ -162,7 +162,7 @@ impl D {
     pub fn one_hot(&self, i: impl DLike) -> Self {
         self.build(Self::lam(
             1,
-            i.val().lift(1).eq(Self::var(0)).if_then_else(1., 0.),
+            Self::var(0).eq(i.val().lift(1)).if_then_else(1., 0.),
         ))
     }
 

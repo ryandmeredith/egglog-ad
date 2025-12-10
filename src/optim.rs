@@ -37,11 +37,8 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
     let g = &D(var!("g"));
     eg.run_program(vec![
         rewrite(x + 0., x, false),
-        rewrite(0. + x, x, false),
         rewrite(x * 1., x, false),
-        rewrite(1. * x, x, false),
         rewrite(x * 0., 0., false),
-        rewrite(0. * x, 0., false),
         rewrite(x + -y, x - y, false),
         rewrite(x - x, 0., false),
         rewrite(x * y + x * z, x * (y + z), false),
@@ -66,6 +63,9 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
             f.ifold(x, z).pair(g.ifold(y, z)),
             false,
         ),
+        rewrite(x.eq(y), y.eq(x), false),
+        rewrite(x + y, y + x, false),
+        rewrite(x * y, y * x, false),
     ])?;
     Ok(())
 }
