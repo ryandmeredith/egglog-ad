@@ -362,6 +362,7 @@ name = "egglog-ad"
 version = "0.1.0"
 dependencies = [
  "egglog",
+ "env_logger",
 ]
 
 [[package]]
