@@ -28,6 +28,6 @@
 (rule ((= (Int i) e)) ((set (FreeVars e) (set-empty))) :ruleset optim)
 (rule ((= (Real x) e)) ((set (FreeVars e) (set-empty))) :ruleset optim)
 
-(rewrite (App (App (App (Prim (IFold)) (Lam (Lam (App (App (App (Prim (If)) (App (App (Prim (EQ)) (Var 0)) e0)) e1) (Var 1))))) z) n) (Shift 0 -2 (Subst 1 (Shift 0 2 z) (Subst 0 (Shift 0 2 e0) e1))) :when ((set-not-contains (FreeVars el) 0) (set-not-contains (FreeVars e0) 1)) :ruleset optim)
+(rewrite (App (App (App (Prim (IFold)) (Lam (Lam (App (App (App (Prim (If)) (App (App (Prim (EQ)) (Var 0)) e0)) e1) (Var 1))))) z) n) (Shift 0 -2 (Subst 1 (Shift 0 2 z) (Subst 0 (Shift 0 2 e0) e1))) :when ((set-not-contains (FreeVars el) 0) (set-not-contains (FreeVars e0) 1)) :subsume :ruleset optim)
 
 (unstable-combined-ruleset both deriv optim)

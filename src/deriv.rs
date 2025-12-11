@@ -81,7 +81,7 @@ pub(crate) fn add_to_egraph(eg: &mut EGraph) -> Result<(), Error> {
 
 pub fn diff(f: impl DLike) -> Result<D, Error> {
     let df = D(d(f.val().lift(1).0));
-    let expr = D::lam(1, df.app([D::var(0).pair(1.)])).0;
+    let expr = D::lam(1, df.app([D::var(0).pair(1.)]).snd()).0;
     let mut eg = EGraph::default();
     f_smooth::add_to_egraph(&mut eg)?;
     add_to_egraph(&mut eg)?;
@@ -103,7 +103,8 @@ pub fn grad(f: impl DLike) -> Result<D, Error> {
         1,
         D::var(0).length().build(D::lam(
             1,
-            df.app([D::var(1).vector_zip(D::var(1).length().one_hot(D::var(0)))]),
+            df.app([D::var(1).vector_zip(D::var(1).length().one_hot(D::var(0)))])
+                .snd(),
         )),
     )
     .0;
