@@ -173,6 +173,15 @@ impl D {
     pub fn prod(&self) -> Self {
         Self::lam(2, Self::var(1) * self.lift(2).get(Self::var(0))).ifold(1., self.length())
     }
+
+    pub fn dot(&self, other: impl DLike) -> Self {
+        let i = &Self::var(0);
+        Self::lam(
+            2,
+            Self::var(1) + self.lift(2).get(i) * other.val().lift(2).get(i),
+        )
+        .ifold(0., self.length())
+    }
 }
 
 impl Not for D {
